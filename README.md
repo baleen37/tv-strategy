@@ -152,4 +152,4 @@ MIT License
 
 - [TradingView Pine Script v6 Docs](https://www.tradingview.com/pine-script-docs/)
 - [Pine Script Reference](https://www.tradingview.com/pine-script-reference/v6/)
-- [Strategy Tester Guide](https://www.tradingview.com/support/solutions/43000481029/)
+- [Strategy Tester Guide](https://www.tradingview.com/support/solutions/43000481029/)# Test comment
