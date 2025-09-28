@@ -82,6 +82,9 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (API calls, file I/O)",
+]
 addopts = [
     "-ra",
     "--strict-markers",
