@@ -1,16 +1,29 @@
-.PHONY: help setup test validate-all format lint clean install-hooks ci-local
+.PHONY: help setup test format lint clean install-hooks ci-local build-darwin build-nixos switch-darwin switch-nixos
 
 # 기본 타겟
 help:
-	@echo "Available commands:"
-	@echo "  make setup        - 개발 환경 설정"
-	@echo "  make test         - 모든 테스트 실행"
-	@echo "  make validate-all - 모든 Pine Script 검증"
-	@echo "  make format       - 코드 포맷팅"
-	@echo "  make lint         - 코드 린팅"
-	@echo "  make clean        - 캐시 및 임시 파일 삭제"
-	@echo "  make install-hooks - Pre-commit hooks 설치"
-	@echo "  make ci-local     - 로컬에서 CI 파이프라인 실행"
+	@echo "🏠 Nix Dotfiles Management System"
+	@echo ""
+	@echo "Development Commands:"
+	@echo "  make setup           - 개발 환경 설정"
+	@echo "  make format          - 코드 포맷팅 (Nix)"
+	@echo "  make lint            - 코드 린팅 및 검증"
+	@echo "  make test            - 모든 테스트 실행"
+	@echo "  make clean           - 캐시 및 빌드 파일 정리"
+	@echo "  make install-hooks   - Pre-commit hooks 설치"
+	@echo "  make ci-local        - 로컬 CI 파이프라인 실행"
+	@echo ""
+	@echo "System Configuration:"
+	@echo "  make build-darwin    - Darwin 시스템 빌드"
+	@echo "  make build-nixos     - NixOS 시스템 빌드"
+	@echo "  make switch-darwin   - Darwin 시스템 적용"
+	@echo "  make switch-nixos    - NixOS 시스템 적용"
+	@echo "  make home-switch     - Home Manager 적용"
+	@echo ""
+	@echo "Utility Commands:"
+	@echo "  make flake-update    - Flake inputs 업데이트"
+	@echo "  make gc              - Nix 가비지 컬렉션"
+	@echo "  make check-health    - 시스템 상태 확인"
 
 # 개발 환경 설정
 setup: requirements.txt
