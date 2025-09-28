@@ -93,7 +93,7 @@ format:
 lint:
 	@echo "🔍 Running linters..."
 	ruff check src/ tests/ --fix
-	mypy src/ tests/ --ignore-missing-imports --disable-error-code=union-attr,arg-type,assignment,operator,misc,return-value,no-any-return,attr-defined,var-annotated,index,no-untyped-def || true
+	mypy src/ tests/ --ignore-missing-imports || true
 	@echo "✅ Linting complete"
 
 # 프로젝트 구조 확인
