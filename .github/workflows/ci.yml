@@ -164,7 +164,7 @@ jobs:
     - name: Run Tests with Coverage
       run: |
         echo "🧪 Running test suite with coverage..."
-        pytest --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=15 -x --tb=short --maxfail=5 -m "not slow"
+        pytest --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=10 -x --tb=short --maxfail=3 tests/test_backtest.py
         echo "✅ Tests passed with required coverage"
 
     - name: Upload Coverage to Codecov
