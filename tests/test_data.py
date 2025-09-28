@@ -16,11 +16,11 @@ import pytest
 
 # These imports WILL FAIL initially - this is expected in TDD
 try:
-    from src.data.ccxt_client import download_command  # CLI module function
     from src.data.ccxt_client import (
         CCXTClient,
         CCXTError,
         DataDownloader,
+        download_command,  # CLI module function
     )
     from src.data.storage import DataValidator, ParquetStorage
 except ImportError as e:
