@@ -3,7 +3,7 @@
 ## 1. 백테스팅 엔진 아키텍처
 
 ### Decision: Event-Driven Architecture with Vectorized Operations
-**Rationale**: 
+**Rationale**:
 - 이벤트 드리븐: 실제 거래 환경과 유사한 시뮬레이션 제공
 - 벡터 연산: NumPy/Pandas 활용으로 대량 데이터 고속 처리
 - 메모리 효율: 청크 단위 데이터 처리로 메모리 사용 최적화
@@ -23,7 +23,7 @@
 **Best Practices**:
 ```pine
 //@version=5
-strategy("Template", overlay=true, 
+strategy("Template", overlay=true,
          initial_capital=10000,
          default_qty_type=strategy.percent_of_equity,
          default_qty_value=10,
@@ -31,7 +31,7 @@ strategy("Template", overlay=true,
          commission_value=0.1)
 
 // 1. Input Parameters (Grouped)
-// 2. Indicator Calculations  
+// 2. Indicator Calculations
 // 3. Entry/Exit Logic
 // 4. Risk Management
 // 5. Visualization
@@ -49,22 +49,22 @@ strategy("Template", overlay=true,
 ```python
 class DataQualityManager:
     """데이터 품질 관리 전용 클래스"""
-    
+
     def validate_ohlcv(self, df: pd.DataFrame) -> tuple[bool, list[str]]:
         """OHLCV 데이터 검증"""
         errors = []
-        
+
         # 1. 필수 컬럼 체크
         required_cols = ['open', 'high', 'low', 'close', 'volume']
         if not all(col in df.columns for col in required_cols):
             errors.append("Missing required columns")
-            
+
         # 2. OHLC 관계 검증
         if (df['low'] > df['high']).any():
             errors.append("Low > High detected")
         if (df['low'] > df['open']).any() or (df['low'] > df['close']).any():
             errors.append("Low price violation")
-            
+
         # 3. 이상치 탐지 (IQR 방법)
         for col in ['close', 'volume']:
             Q1 = df[col].quantile(0.25)
@@ -73,14 +73,14 @@ class DataQualityManager:
             outliers = ((df[col] < Q1 - 3*IQR) | (df[col] > Q3 + 3*IQR))
             if outliers.any():
                 errors.append(f"Outliers in {col}: {outliers.sum()} points")
-                
+
         # 4. 갭 검사
         time_diff = df.index.to_series().diff()
         expected_diff = pd.Timedelta(minutes=1)  # 1분봉 기준
         gaps = time_diff[time_diff > expected_diff * 1.5]
         if len(gaps) > 0:
             errors.append(f"Time gaps detected: {len(gaps)} gaps")
-            
+
         return len(errors) == 0, errors
 ```
 
@@ -180,41 +180,41 @@ class DataCollector:
         })
         # 백업 데이터 소스
         self.backup_sources = ['cached_data', 'alternative_api']
-        
-    async def fetch_with_retry(self, symbol: str, timeframe: str, 
-                               since: Optional[int] = None, 
+
+    async def fetch_with_retry(self, symbol: str, timeframe: str,
+                               since: Optional[int] = None,
                                limit: int = 500) -> pd.DataFrame:
         """
         안전한 데이터 수집 with 다층 에러 처리
         """
         max_retries = 3
         retry_delay = 1
-        
+
         for attempt in range(max_retries):
             try:
                 # Primary: CCXT
                 ohlcv = await self.exchange.fetch_ohlcv(
                     symbol, timeframe, since, limit
                 )
-                
+
                 # 데이터 검증
                 if self._validate_data(ohlcv):
                     return self._to_dataframe(ohlcv)
-                    
+
             except ccxt.NetworkError as e:
                 # 네트워크 오류: 재시도
                 await asyncio.sleep(retry_delay * (2 ** attempt))
                 continue
-                
+
             except ccxt.ExchangeError as e:
                 # 거래소 오류: 백업 소스 사용
                 return await self._fetch_from_backup(symbol, timeframe)
-                
+
             except Exception as e:
                 # 예상치 못한 오류: 로깅 후 안전 모드
                 self._log_critical_error(e)
                 break
-                
+
         # 모든 시도 실패: 캐시된 데이터 반환
         return self._get_cached_data(symbol, timeframe)
 ```
@@ -230,7 +230,7 @@ def _validate_data(self, ohlcv: list) -> bool:
         self._check_volume,         # 거래량 검증
         self._check_gaps            # 갭 탐지
     ]
-    
+
     for check in checks:
         if not check(ohlcv):
             return False
@@ -272,7 +272,7 @@ class StrategyInterface(ABC):
     @abstractmethod
     def calculate_signals(self, data: pd.DataFrame) -> pd.Series:
         pass
-    
+
     @abstractmethod
     def get_position_size(self, signal: float, portfolio: Portfolio) -> float:
         pass
@@ -322,16 +322,16 @@ async def download_historical(symbol, start, end):
     """한 번에 대량 다운로드 후 저장"""
     data = []
     current = start
-    
+
     while current < end:
         batch = await exchange.fetch_ohlcv(
-            symbol, '1h', 
+            symbol, '1h',
             since=int(current.timestamp() * 1000),
             limit=1000  # 최대 한도
         )
         data.extend(batch)
         current += timedelta(hours=1000)
-        
+
     # Parquet으로 저장 (압축 효율)
     df = pd.DataFrame(data, columns=['timestamp', 'o', 'h', 'l', 'c', 'v'])
     df.to_parquet(f'data/{symbol}_{start}_{end}.parquet')

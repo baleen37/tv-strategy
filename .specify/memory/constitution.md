@@ -1,4 +1,4 @@
-<!-- 
+<!--
 Sync Impact Report (2025-09-28):
 - Version change: 1.0.0 → 1.0.1 (Remove monitoring requirements)
 - Modified sections:
@@ -104,7 +104,7 @@ Sync Impact Report (2025-09-28):
 ### Version Policy
 Constitution versioning follows semantic versioning:
 - **MAJOR**: Principle removal or fundamental change
-- **MINOR**: New principle or section addition  
+- **MINOR**: New principle or section addition
 - **PATCH**: Clarifications and minor updates
 
 **Version**: 1.0.1 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-09-28

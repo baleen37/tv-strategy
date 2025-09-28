@@ -37,7 +37,7 @@
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 - [x] T004 [P] Data collection test in tests/test_data.py for CCXT client download/validation
-- [x] T005 [P] Backtest engine test in tests/test_backtest.py for RSI strategy execution  
+- [x] T005 [P] Backtest engine test in tests/test_backtest.py for RSI strategy execution
 - [x] T006 [P] Pine Script validation test in tests/test_pine.py for template.pine syntax checking
 - [x] T007 [P] Integration test in tests/test_integration.py for complete backtest workflow
 
@@ -94,7 +94,7 @@ Task: "Basic RSI strategy in src/strategies/rsi_basic.pine implementing signals"
 ## Quickstart Validation Scenarios
 Based on quickstart.md requirements:
 1. T008: `python -m src.data.ccxt_client download BTCUSDT 1d 100`
-2. T014: `python -m src.main backtest --symbol BTCUSDT`  
+2. T014: `python -m src.main backtest --symbol BTCUSDT`
 3. T015: `python -m tests.test_pine src/strategies/rsi_basic.pine`
 4. T018: `pytest --cov=src --cov-report=term-missing`
 
@@ -130,7 +130,7 @@ tests/
 *GATE: Checked before task execution*
 
 - [x] All entities have model representations in core tasks
-- [x] All tests come before implementation (T004-T007 → T008-T014)  
+- [x] All tests come before implementation (T004-T007 → T008-T014)
 - [x] Parallel tasks truly independent (different modules/files)
 - [x] Each task specifies exact file path
 - [x] No task modifies same file as another [P] task

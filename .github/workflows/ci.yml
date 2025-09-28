@@ -1,248 +1,153 @@
-name: Cryptocurrency Backtesting CI/CD
+name: CI
 
 on:
   push:
-    branches: [ main, develop, update-project-docs ]
-  pull_request:
     branches: [ main, develop ]
-  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  setup:
+  quality:
     runs-on: ubuntu-latest
-    outputs:
-      cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        cache: 'pip'
 
     - name: Cache dependencies
-      id: cache
       uses: actions/cache@v3
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        path: |
+          ~/.cache/pip
+          venv/
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
     - name: Install dependencies
+      run: make install
+
+    - name: Run code quality checks
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-  lint:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Code Quality - Ruff Linting
-      run: |
-        echo "🔍 Running Ruff linting..."
-        ruff check src/ tests/ --output-format=github
-        echo "✅ Ruff linting passed"
-
-    - name: Code Quality - Black Formatting
-      run: |
-        echo "🎨 Checking Black formatting..."
-        black --check src/ tests/
-        echo "✅ Black formatting verified"
-
-    - name: Code Quality - Import Sorting
-      run: |
-        echo "📦 Checking import sorting..."
-        isort --check-only src/ tests/ --profile black
-        echo "✅ Import sorting verified"
-
-  type-check:
-    needs: setup
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Code Quality - Type Checking
-      run: |
-        echo "🔬 Running type checking..."
-        mypy src/ --ignore-missing-imports || echo "⚠️ MyPy found issues (non-blocking)"
-        echo "✅ Type checking completed"
-
-  validate:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Pine Script Validation
-      run: |
-        echo "🌲 Validating Pine Script files..."
-        find src/strategies -name "*.pine" -type f | while read file; do
-          echo "Validating: $file"
-          python -m src.main validate --file "$file"
-        done
-        echo "✅ All Pine Script files validated"
+        echo "::group::Code Quality Checks"
+        make check
+        echo "::endgroup::"
 
   test:
-    needs: setup
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      coverage: ${{ steps.coverage-check.outputs.coverage }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        cache: 'pip'
 
-    - name: Restore cache
+    - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        path: |
+          ~/.cache/pip
+          venv/
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Install dependencies
+      run: make install
+
+    - name: Run tests with coverage
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        echo "::group::Running Tests"
+        make test 2>&1 | tee test_output.txt
+        echo "::endgroup::"
 
-    - name: Basic Import Test
+    - name: Extract coverage
+      id: coverage-check
       run: |
-        echo "🧪 Running basic import tests..."
-        python -c "import src.backtest.engine; import src.backtest.models; print('✅ Core modules import successfully')"
-        python -c "import src.data.ccxt_client; import src.data.storage; print('✅ Data modules import successfully')"
-        python -c "import src.main; print('✅ Main module imports successfully')"
-        echo "✅ All core modules verified"
+        if [ -f htmlcov/index.html ]; then
+          coverage=$(grep -o '[0-9]\+%' htmlcov/index.html | head -1 | sed 's/%//')
+          echo "coverage=$coverage" >> $GITHUB_OUTPUT
+          echo "Coverage: $coverage%"
+        else
+          echo "coverage=0" >> $GITHUB_OUTPUT
+          echo "Coverage: 0%"
+        fi
 
-  cli-test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - name: Check coverage threshold
+      run: |
+        coverage=${{ steps.coverage-check.outputs.coverage }}
+        if [ "$coverage" -lt 70 ]; then
+          echo "❌ Coverage $coverage% is below required 70%"
+          exit 1
+        else
+          echo "✅ Coverage $coverage% meets requirement (70%+ required)"
+        fi
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        python-version: '3.11'
+        name: coverage-report
+        path: htmlcov/
 
-    - name: Restore cache
-      uses: actions/cache@v3
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        name: test-output
+        path: test_output.txt
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Test CLI Integration (Mock)
-      run: |
-        echo "🔗 Testing CLI integration..."
-        python -c "
-        import sys
-        sys.path.append('src')
-        from src.main import BacktestCLI
-        cli = BacktestCLI()
-        print('✅ CLI integration verified')
-        "
-
-  final-report:
-    needs: [lint, type-check, validate, test, cli-test]
+  ci-result:
     runs-on: ubuntu-latest
+    needs: [quality, test]
     if: always()
+    outputs:
+      success: ${{ steps.result.outputs.success }}
     steps:
-    - name: Final Validation Report
+    - name: Check CI status
+      id: result
       run: |
-        echo "🎯 CI/CD Pipeline Summary:"
-        echo "✅ Code quality checks (Ruff, Black, isort, mypy)"
-        echo "✅ Pine Script validation"
-        echo "✅ Test coverage verification"
-        echo "✅ CLI integration tests"
-        echo ""
-        echo "🚀 Cryptocurrency Backtesting System - Ready for deployment!"
+        if [ "${{ needs.quality.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ]; then
+          echo "success=true" >> $GITHUB_OUTPUT
+          echo "✅ All CI checks passed"
+        else
+          echo "success=false" >> $GITHUB_OUTPUT
+          echo "❌ CI checks failed"
+          echo "Quality: ${{ needs.quality.result }}"
+          echo "Test: ${{ needs.test.result }}"
+          exit 1
+        fi
 
-  security-scan:
+  security:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Run Trivy Security Scanner
+    - name: Run security scan
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: 'fs'
-        scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
       continue-on-error: true
 
-    - name: Upload Trivy Results to GitHub Security
+    - name: Upload scan results
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
       continue-on-error: true
-
-    - name: Security Report
-      run: |
-        echo "🔒 Security scan completed with Trivy"
-        echo "Results uploaded to GitHub Security tab"
