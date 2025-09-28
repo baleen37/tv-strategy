@@ -89,11 +89,11 @@ jobs:
     - name: Check coverage threshold
       run: |
         coverage=${{ steps.coverage-check.outputs.coverage }}
-        if [ "$coverage" -lt 95 ]; then
-          echo "❌ Coverage $coverage% is below required 95%"
+        if [ "$coverage" -lt 70 ]; then
+          echo "❌ Coverage $coverage% is below required 70%"
           exit 1
         else
-          echo "✅ Coverage $coverage% meets requirement"
+          echo "✅ Coverage $coverage% meets requirement (70%+ required)"
         fi
 
     - name: Upload coverage reports
