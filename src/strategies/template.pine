@@ -1,0 +1,231 @@
+//@version=6
+strategy("Strategy Template v6", overlay=true, initial_capital=10000, commission_type=strategy.commission.percent, commission_value=0.1)
+
+//==============================================================================
+// STRATEGY TEMPLATE - Pine Script v6
+//==============================================================================
+// This template provides a standardized structure for TradingView strategies
+// with proper risk management, input validation, and visualization.
+//
+// Features:
+// - Pine Script v6 syntax compliance
+// - Comprehensive input parameters with validation
+// - Risk management (stop loss, take profit)
+// - Position sizing options
+// - Session and date filtering
+// - Performance tracking
+// - Professional visualization
+//==============================================================================
+
+//------------------------------------------------------------------------------
+// INPUT PARAMETERS
+//------------------------------------------------------------------------------
+
+// Strategy Configuration
+strategy_group = "Strategy Settings"
+rsi_length = input.int(14, title="RSI Length", minval=5, maxval=50, group=strategy_group, tooltip="Period for RSI calculation")
+rsi_oversold = input.int(30, title="RSI Oversold Level", minval=10, maxval=40, group=strategy_group)
+rsi_overbought = input.int(70, title="RSI Overbought Level", minval=60, maxval=90, group=strategy_group)
+
+// Risk Management
+risk_group = "Risk Management"
+stop_loss_pct = input.float(2.0, title="Stop Loss %", minval=0.5, maxval=10.0, step=0.1, group=risk_group)
+take_profit_pct = input.float(4.0, title="Take Profit %", minval=1.0, maxval=20.0, step=0.1, group=risk_group)
+risk_reward_ratio = take_profit_pct / stop_loss_pct
+
+// Position Management
+position_group = "Position Management"
+use_position_sizing = input.bool(true, title="Use Position Sizing", group=position_group)
+position_size_pct = input.float(10.0, title="Position Size %", minval=1.0, maxval=100.0, step=1.0, group=position_group)
+
+// Trading Session
+session_group = "Trading Session"
+use_session_filter = input.bool(false, title="Use Session Filter", group=session_group)
+trading_session = input.session("0930-1600", title="Trading Session", group=session_group)
+
+// Date Range
+date_group = "Date Range"
+use_date_filter = input.bool(false, title="Use Date Filter", group=date_group)
+start_date = input.time(timestamp("2024-01-01 00:00"), title="Start Date", group=date_group)
+end_date = input.time(timestamp("2024-12-31 23:59"), title="End Date", group=date_group)
+
+//------------------------------------------------------------------------------
+// VALIDATION
+//------------------------------------------------------------------------------
+
+// Validate risk/reward ratio
+if risk_reward_ratio < 1.5
+    runtime.error("Risk/Reward ratio must be at least 1.5:1")
+
+//------------------------------------------------------------------------------
+// INDICATOR CALCULATIONS
+//------------------------------------------------------------------------------
+
+// RSI Calculation
+rsi = ta.rsi(close, rsi_length)
+
+// Moving averages for trend confirmation
+ma_short = ta.sma(close, 20)
+ma_long = ta.sma(close, 50)
+trend_up = ma_short > ma_long
+
+//------------------------------------------------------------------------------
+// UTILITY FUNCTIONS
+//------------------------------------------------------------------------------
+
+// Date filter function
+f_date_filter() =>
+    not use_date_filter or (time >= start_date and time <= end_date)
+
+// Session filter function
+f_session_filter() =>
+    not use_session_filter or not na(time(timeframe.period, trading_session))
+
+// Position size calculation
+f_calculate_position_size(equity, risk_pct) =>
+    if use_position_sizing
+        math.min(equity * position_size_pct / 100, equity * risk_pct / 100)
+    else
+        equity * 0.1  // Default 10%
+
+//------------------------------------------------------------------------------
+// ENTRY CONDITIONS
+//------------------------------------------------------------------------------
+
+// Long entry condition
+long_condition = ta.crossover(rsi, rsi_oversold) and trend_up and f_date_filter() and f_session_filter()
+
+// Short entry condition (if needed)
+short_condition = ta.crossunder(rsi, rsi_overbought) and not trend_up and f_date_filter() and f_session_filter()
+
+//------------------------------------------------------------------------------
+// RISK MANAGEMENT CALCULATIONS
+//------------------------------------------------------------------------------
+
+// Calculate stop loss and take profit levels
+long_stop_price = strategy.position_avg_price * (1 - stop_loss_pct / 100)
+long_tp_price = strategy.position_avg_price * (1 + take_profit_pct / 100)
+
+short_stop_price = strategy.position_avg_price * (1 + stop_loss_pct / 100)
+short_tp_price = strategy.position_avg_price * (1 - take_profit_pct / 100)
+
+//------------------------------------------------------------------------------
+// STRATEGY EXECUTION
+//------------------------------------------------------------------------------
+
+// Entry orders
+if long_condition and strategy.position_size == 0
+    position_value = f_calculate_position_size(strategy.equity, 2.0)
+    qty = position_value / close
+    strategy.entry("Long", strategy.long, qty=qty, comment="RSI Long Entry")
+
+if short_condition and strategy.position_size == 0
+    position_value = f_calculate_position_size(strategy.equity, 2.0)
+    qty = position_value / close
+    strategy.entry("Short", strategy.short, qty=qty, comment="RSI Short Entry")
+
+// Exit orders with stop loss and take profit
+if strategy.position_size > 0  // Long position
+    strategy.exit("Long Exit", "Long", stop=long_stop_price, limit=long_tp_price, comment="Long Exit")
+
+if strategy.position_size < 0  // Short position
+    strategy.exit("Short Exit", "Short", stop=short_stop_price, limit=short_tp_price, comment="Short Exit")
+
+// Emergency exit on opposite signal
+if strategy.position_size > 0 and ta.crossunder(rsi, rsi_overbought)
+    strategy.close("Long", comment="Signal Exit")
+
+if strategy.position_size < 0 and ta.crossover(rsi, rsi_oversold)
+    strategy.close("Short", comment="Signal Exit")
+
+//------------------------------------------------------------------------------
+// VISUALIZATION
+//------------------------------------------------------------------------------
+
+// Plot RSI
+rsi_color = rsi > rsi_overbought ? color.red : rsi < rsi_oversold ? color.green : color.blue
+plot(rsi, title="RSI", color=rsi_color, linewidth=2)
+
+// RSI levels
+hline(rsi_overbought, "Overbought", color=color.red, linestyle=hline.style_dashed)
+hline(rsi_oversold, "Oversold", color=color.green, linestyle=hline.style_dashed)
+hline(50, "Midline", color=color.gray, linestyle=hline.style_dotted)
+
+// Plot moving averages on main chart
+plot(ma_short, title="MA 20", color=color.orange, linewidth=1)
+plot(ma_long, title="MA 50", color=color.purple, linewidth=1)
+
+// Background color for trend
+bgcolor(trend_up ? color.new(color.green, 95) : color.new(color.red, 95), title="Trend Background")
+
+// Entry/Exit markers
+plotshape(long_condition, title="Long Entry", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(short_condition, title="Short Entry", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)
+
+//------------------------------------------------------------------------------
+// PERFORMANCE TRACKING
+//------------------------------------------------------------------------------
+
+// Track trade statistics
+var int trades_count = 0
+var float total_pnl = 0.0
+var float max_drawdown = 0.0
+
+if strategy.closedtrades > trades_count
+    trades_count := strategy.closedtrades
+    total_pnl := strategy.netprofit
+    max_drawdown := math.min(max_drawdown, strategy.max_drawdown)
+
+//------------------------------------------------------------------------------
+// INFORMATION PANEL
+//------------------------------------------------------------------------------
+
+// Create information table
+if barstate.islast
+    var table info_table = table.new(position.top_right, 3, 7, bgcolor=color.white, border_width=1)
+    
+    table.cell(info_table, 0, 0, "Metric", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 0, "Value", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 2, 0, "Target", text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 1, "RSI", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 1, str.tostring(math.round(rsi, 2)), text_color=color.black, text_size=size.small)
+    table.cell(info_table, 2, 1, str.tostring(rsi_oversold) + "/" + str.tostring(rsi_overbought), text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 2, "Risk/Reward", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 2, str.tostring(math.round(risk_reward_ratio, 2)), text_color=color.black, text_size=size.small)
+    table.cell(info_table, 2, 2, ">= 1.5", text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 3, "Position", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 3, strategy.position_size > 0 ? "Long" : strategy.position_size < 0 ? "Short" : "Flat", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 2, 3, "---", text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 4, "Total Trades", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 4, str.tostring(strategy.closedtrades), text_color=color.black, text_size=size.small)
+    table.cell(info_table, 2, 4, "---", text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 5, "Win Rate", text_color=color.black, text_size=size.small)
+    win_rate = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades * 100 : 0
+    table.cell(info_table, 1, 5, str.tostring(math.round(win_rate, 1)) + "%", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 2, 5, "> 50%", text_color=color.black, text_size=size.small)
+    
+    table.cell(info_table, 0, 6, "Net P&L", text_color=color.black, text_size=size.small)
+    pnl_color = strategy.netprofit > 0 ? color.green : strategy.netprofit < 0 ? color.red : color.gray
+    table.cell(info_table, 1, 6, str.tostring(math.round(strategy.netprofit, 2)), text_color=pnl_color, text_size=size.small)
+    table.cell(info_table, 2, 6, "> 0", text_color=color.black, text_size=size.small)
+
+//------------------------------------------------------------------------------
+// ALERTS
+//------------------------------------------------------------------------------
+
+// Entry alerts
+alertcondition(long_condition, title="Long Entry Signal", message="RSI Long Entry - {{ticker}} at {{close}}")
+alertcondition(short_condition, title="Short Entry Signal", message="RSI Short Entry - {{ticker}} at {{close}}")
+
+// Exit alerts
+alertcondition(ta.crossunder(rsi, rsi_overbought), title="Long Exit Signal", message="RSI Long Exit - {{ticker}} at {{close}}")
+alertcondition(ta.crossover(rsi, rsi_oversold), title="Short Exit Signal", message="RSI Short Exit - {{ticker}} at {{close}}")
+
+//==============================================================================
+// END OF STRATEGY TEMPLATE
+//==============================================================================
