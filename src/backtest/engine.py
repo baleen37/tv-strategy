@@ -7,6 +7,7 @@ as required by TDD tests.
 
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import TYPE_CHECKING
@@ -445,6 +446,9 @@ class BacktestEngine:
         # Process signals
         trades = self.process_signals(signals, market_data)
 
+        # Calculate comprehensive metrics in parallel
+        metrics = self._calculate_parallel_metrics(trades, market_data)
+
         # Calculate metrics
         from .models import BacktestResult
 
@@ -458,8 +462,10 @@ class BacktestEngine:
             start_date=market_data["timestamp"].iloc[0],
             end_date=market_data["timestamp"].iloc[-1],
             total_trades=len(trades),
-            win_rate=self._calculate_win_rate(),
-            max_drawdown=self._calculate_max_drawdown(market_data),
+            win_rate=metrics.get("win_rate", 0.0),
+            max_drawdown=metrics.get("max_drawdown", 0.0),
+            sharpe_ratio=metrics.get("sharpe_ratio"),
+            profit_factor=metrics.get("profit_factor"),
         )
 
         return result
@@ -625,3 +631,118 @@ class BacktestEngine:
             max_dd = min(max_dd, drawdown)
 
         return max_dd
+
+    def _calculate_parallel_metrics(
+        self, trades: list[Trade], market_data: pd.DataFrame
+    ) -> dict[str, float]:
+        """Calculate all metrics in parallel.
+
+        Args:
+            trades: List of completed trades
+            market_data: Market data DataFrame
+
+        Returns:
+            Dictionary of calculated metrics
+        """
+        from .metrics import PerformanceMetrics, RiskMetrics, TradeAnalyzer
+
+        # Prepare data for metrics calculation
+        portfolio_values = self._build_portfolio_timeline(trades, market_data)
+        returns = (
+            portfolio_values.pct_change().dropna() if len(portfolio_values) > 1 else pd.Series()
+        )
+
+        # Initialize metric calculators
+        perf_metrics = PerformanceMetrics(self.initial_capital)
+        risk_metrics = RiskMetrics()
+        trade_analyzer = TradeAnalyzer()
+
+        # Define parallel metric calculations
+        def calculate_performance_metrics():
+            return {
+                "win_rate": perf_metrics.calculate_win_rate(trades),
+                "profit_factor": perf_metrics.calculate_profit_factor(trades),
+                "max_drawdown": perf_metrics.calculate_max_drawdown(portfolio_values),
+                "sharpe_ratio": (
+                    perf_metrics.calculate_sharpe_ratio(returns) if not returns.empty else 0.0
+                ),
+                "sortino_ratio": (
+                    perf_metrics.calculate_sortino_ratio(returns) if not returns.empty else 0.0
+                ),
+            }
+
+        def calculate_risk_metrics():
+            return {
+                "var": risk_metrics.calculate_var(returns) if not returns.empty else 0.0,
+                "cvar": risk_metrics.calculate_cvar(returns) if not returns.empty else 0.0,
+                "volatility": (
+                    risk_metrics.calculate_volatility(returns) if not returns.empty else 0.0
+                ),
+            }
+
+        def calculate_trade_analysis():
+            analysis = trade_analyzer.analyze_trades(trades)
+            drawdown_analysis = trade_analyzer.analyze_drawdown_periods(portfolio_values)
+            return {
+                "avg_win": analysis.get("avg_win", 0.0),
+                "avg_loss": analysis.get("avg_loss", 0.0),
+                "avg_duration_days": analysis.get("avg_duration", pd.Timedelta(0)).total_seconds()
+                / 86400,
+                "drawdown_periods": drawdown_analysis.get("drawdown_periods", 0),
+                "max_drawdown_duration_days": drawdown_analysis.get(
+                    "max_drawdown_duration", pd.Timedelta(0)
+                ).total_seconds()
+                / 86400,
+            }
+
+        # Execute calculations in parallel
+        results = {}
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = {
+                executor.submit(calculate_performance_metrics): "performance",
+                executor.submit(calculate_risk_metrics): "risk",
+                executor.submit(calculate_trade_analysis): "trade_analysis",
+            }
+
+            for future in as_completed(futures):
+                try:
+                    metric_results = future.result()
+                    results.update(metric_results)
+                except Exception as e:
+                    logger.warning(f"Failed to calculate {futures[future]} metrics: {e}")
+
+        return results
+
+    def _build_portfolio_timeline(
+        self, trades: list[Trade], market_data: pd.DataFrame
+    ) -> pd.Series:
+        """Build portfolio value timeline from trades.
+
+        Args:
+            trades: List of completed trades
+            market_data: Market data DataFrame
+
+        Returns:
+            Series of portfolio values over time
+        """
+        if not trades:
+            return pd.Series(
+                [float(self.initial_capital)], index=[market_data["timestamp"].iloc[0]]
+            )
+
+        # Sort trades by entry time
+        sorted_trades = sorted([t for t in trades if t.entry_time], key=lambda x: x.entry_time)
+
+        # Build timeline
+        timeline = {}
+        running_value = float(self.initial_capital)
+        timeline[market_data["timestamp"].iloc[0]] = running_value
+
+        for trade in sorted_trades:
+            if trade.exit_time and trade.pnl:
+                running_value += float(trade.pnl)
+                timeline[trade.exit_time] = running_value
+
+        # Convert to Series and sort by index
+        portfolio_series = pd.Series(timeline).sort_index()
+        return portfolio_series

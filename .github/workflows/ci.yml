@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       success: ${{ steps.ci-result.outputs.success }}
+      coverage: ${{ steps.coverage-check.outputs.coverage }}
     steps:
     - uses: actions/checkout@v4
 
@@ -24,20 +25,80 @@ jobs:
         python-version: '3.11'
         cache: 'pip'
 
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          venv/
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: make install
 
-    - name: Run CI pipeline
-      id: ci-pipeline
-      run: make ci
+    - name: Run code quality checks
+      id: quality-check
+      run: |
+        echo "::group::Code Quality Checks"
+        make check
+        echo "::endgroup::"
+
+    - name: Run tests with coverage
+      id: test-run
+      run: |
+        echo "::group::Running Tests"
+        make test 2>&1 | tee test_output.txt
+        echo "::endgroup::"
+
+    - name: Extract coverage
+      id: coverage-check
+      run: |
+        if [ -f htmlcov/index.html ]; then
+          coverage=$(grep -o '[0-9]\+%' htmlcov/index.html | head -1 | sed 's/%//')
+          echo "coverage=$coverage" >> $GITHUB_OUTPUT
+          echo "Coverage: $coverage%"
+        else
+          echo "coverage=0" >> $GITHUB_OUTPUT
+          echo "Coverage: 0%"
+        fi
+
+    - name: Check coverage threshold
+      run: |
+        coverage=${{ steps.coverage-check.outputs.coverage }}
+        if [ "$coverage" -lt 95 ]; then
+          echo "❌ Coverage $coverage% is below required 95%"
+          exit 1
+        else
+          echo "✅ Coverage $coverage% meets requirement"
+        fi
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report
+        path: htmlcov/
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-output
+        path: test_output.txt
 
     - name: Set CI result
       id: ci-result
-      run: echo "success=true" >> $GITHUB_OUTPUT
-
-    - name: Upload coverage
-      if: success()
-      run: echo "✅ Coverage uploaded"
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "success=true" >> $GITHUB_OUTPUT
+          echo "✅ All CI checks passed"
+        else
+          echo "success=false" >> $GITHUB_OUTPUT
+          echo "❌ CI checks failed"
+        fi
 
   security:
     runs-on: ubuntu-latest
