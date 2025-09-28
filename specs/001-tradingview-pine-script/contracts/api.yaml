@@ -1,0 +1,463 @@
+openapi: 3.0.3
+info:
+  title: Cryptocurrency Backtesting API
+  description: API for running backtests and managing trading strategies
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api
+    description: Development server
+
+paths:
+  /strategies:
+    get:
+      summary: List all strategies
+      operationId: listStrategies
+      tags:
+        - Strategies
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, testing, active, deprecated]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [momentum, mean_reversion, arbitrage]
+      responses:
+        '200':
+          description: List of strategies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Strategy'
+    
+    post:
+      summary: Create new strategy
+      operationId: createStrategy
+      tags:
+        - Strategies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrategyCreate'
+      responses:
+        '201':
+          description: Strategy created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Strategy'
+
+  /strategies/{strategyId}:
+    get:
+      summary: Get strategy by ID
+      operationId: getStrategy
+      tags:
+        - Strategies
+      parameters:
+        - name: strategyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Strategy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Strategy'
+        '404':
+          description: Strategy not found
+
+  /strategies/{strategyId}/validate:
+    post:
+      summary: Validate Pine Script strategy
+      operationId: validateStrategy
+      tags:
+        - Strategies
+      parameters:
+        - name: strategyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+
+  /backtest:
+    post:
+      summary: Run backtest
+      operationId: runBacktest
+      tags:
+        - Backtesting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BacktestRequest'
+      responses:
+        '202':
+          description: Backtest started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backtest_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [queued, running]
+        '400':
+          description: Invalid request
+
+  /backtest/{backtestId}:
+    get:
+      summary: Get backtest results
+      operationId: getBacktestResult
+      tags:
+        - Backtesting
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Backtest results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResult'
+        '404':
+          description: Backtest not found
+
+  /backtest/{backtestId}/trades:
+    get:
+      summary: Get backtest trades
+      operationId: getBacktestTrades
+      tags:
+        - Backtesting
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of trades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trade'
+
+  /data/{symbol}/klines:
+    get:
+      summary: Get historical klines
+      operationId: getKlines
+      tags:
+        - Market Data
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [BTCUSDT, ETHUSDT]
+        - name: interval
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 1d, 1w]
+        - name: start_time
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            maximum: 1000
+            default: 500
+      responses:
+        '200':
+          description: Kline data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kline'
+
+  /data/sync:
+    post:
+      summary: Sync data from Binance
+      operationId: syncData
+      tags:
+        - Market Data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                symbol:
+                  type: string
+                  enum: [BTCUSDT, ETHUSDT]
+                interval:
+                  type: string
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+      responses:
+        '202':
+          description: Sync started
+        '429':
+          description: Rate limit exceeded
+
+  /reports/{backtestId}:
+    get:
+      summary: Generate HTML report
+      operationId: generateReport
+      tags:
+        - Reports
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: HTML report
+          content:
+            text/html:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Strategy:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        strategy_type:
+          type: string
+        parameters:
+          type: object
+        status:
+          type: string
+          enum: [draft, testing, active, deprecated]
+        created_at:
+          type: string
+          format: date-time
+        pine_script_path:
+          type: string
+
+    StrategyCreate:
+      type: object
+      required:
+        - name
+        - strategy_type
+        - pine_script_path
+      properties:
+        name:
+          type: string
+        strategy_type:
+          type: string
+        parameters:
+          type: object
+        pine_script_path:
+          type: string
+
+    BacktestRequest:
+      type: object
+      required:
+        - strategy_id
+        - symbol
+        - timeframe
+        - start_date
+        - end_date
+      properties:
+        strategy_id:
+          type: string
+        symbol:
+          type: string
+          enum: [BTCUSDT, ETHUSDT]
+        timeframe:
+          type: string
+          enum: [1m, 5m, 15m, 1h, 4h, 1d]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        initial_capital:
+          type: number
+          default: 10000
+        commission_preset:
+          type: string
+          enum: [binance, coinbase, kraken]
+          default: binance
+
+    BacktestResult:
+      type: object
+      properties:
+        id:
+          type: string
+        strategy_id:
+          type: string
+        symbol:
+          type: string
+        timeframe:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        metrics:
+          $ref: '#/components/schemas/PerformanceMetrics'
+        equity_curve:
+          type: array
+          items:
+            type: number
+        status:
+          type: string
+          enum: [running, completed, failed]
+
+    PerformanceMetrics:
+      type: object
+      properties:
+        total_return:
+          type: number
+        annual_return:
+          type: number
+        sharpe_ratio:
+          type: number
+        sortino_ratio:
+          type: number
+        max_drawdown:
+          type: number
+        win_rate:
+          type: number
+        profit_factor:
+          type: number
+        total_trades:
+          type: integer
+        avg_trade_return:
+          type: number
+
+    Trade:
+      type: object
+      properties:
+        id:
+          type: string
+        symbol:
+          type: string
+        side:
+          type: string
+          enum: [long, short]
+        entry_time:
+          type: string
+          format: date-time
+        entry_price:
+          type: number
+        exit_time:
+          type: string
+          format: date-time
+        exit_price:
+          type: number
+        quantity:
+          type: number
+        pnl:
+          type: number
+        pnl_percent:
+          type: number
+        status:
+          type: string
+          enum: [open, closed, cancelled]
+
+    Kline:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: number
+        quote_volume:
+          type: number
+        trades_count:
+          type: integer
+
+    ValidationResult:
+      type: object
+      properties:
+        is_valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: object
+          properties:
+            lines_of_code:
+              type: integer
+            complexity_score:
+              type: number
