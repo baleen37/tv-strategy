@@ -139,7 +139,8 @@ class TestPortfolio:
         """Test commission fees are properly deducted"""
         # This WILL FAIL - commission handling doesn't exist
         portfolio = Portfolio(
-            initial_capital=Decimal("10000.0"), commission_rate=Decimal("0.001")  # 0.1% commission
+            initial_capital=Decimal("10000.0"),
+            commission_rate=Decimal("0.001"),  # 0.1% commission
         )
 
         trade = portfolio.buy("BTC/USDT", Decimal("47000.0"), Decimal("0.1"), datetime.now())
