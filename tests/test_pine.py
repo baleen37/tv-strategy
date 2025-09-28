@@ -137,7 +137,7 @@ hline(oversold_level, "Oversold", color=color.green, linestyle=hline.style_dashe
 class TestPineScriptValidator:
     """Test Pine Script validation functionality"""
 
-    def test_validator_initialization(self):
+    def test_validator_initialization(self) -> None:
         """Test PineScriptValidator can be initialized"""
         # This WILL FAIL - PineScriptValidator doesn't exist
         validator = PineScriptValidator()
@@ -147,7 +147,7 @@ class TestPineScriptValidator:
         assert hasattr(validator, "validate_syntax")
         assert hasattr(validator, "validate_strategy_structure")
 
-    def test_validate_file_path(self, tmp_path, valid_pine_v6_template):
+    def test_validate_file_path(self, tmp_path, valid_pine_v6_template) -> None:
         """Test validating Pine Script from file path"""
         # This WILL FAIL - file validation doesn't exist
         pine_file = tmp_path / "test_strategy.pine"
@@ -161,7 +161,7 @@ class TestPineScriptValidator:
         assert result.errors == []
         assert result.warnings == []
 
-    def test_validate_script_content(self, valid_pine_v6_template):
+    def test_validate_script_content(self, valid_pine_v6_template) -> None:
         """Test validating Pine Script from string content"""
         # This WILL FAIL - content validation doesn't exist
         validator = PineScriptValidator()
@@ -172,7 +172,7 @@ class TestPineScriptValidator:
         assert "strategy" in result.declarations
         assert result.strategy_name == "RSI Strategy v6"
 
-    def test_version_validation_v6_required(self, valid_pine_v6_template):
+    def test_version_validation_v6_required(self, valid_pine_v6_template) -> None:
         """Test that Pine Script v6 is required"""
         # This WILL FAIL - version checking doesn't exist
         validator = PineScriptValidator(required_version="6")
@@ -181,7 +181,7 @@ class TestPineScriptValidator:
         assert result.is_valid is True
         assert result.version == "6"
 
-    def test_version_validation_v5_rejection(self, invalid_pine_v5_script):
+    def test_version_validation_v5_rejection(self, invalid_pine_v5_script) -> None:
         """Test that Pine Script v5 is rejected"""
         # This WILL FAIL - version checking doesn't exist
         validator = PineScriptValidator(required_version="6")
@@ -190,7 +190,7 @@ class TestPineScriptValidator:
         assert result.is_valid is False
         assert "version 6 required" in str(result.errors[0]).lower()
 
-    def test_syntax_error_detection(self, malformed_pine_script):
+    def test_syntax_error_detection(self, malformed_pine_script) -> None:
         """Test detection of syntax errors"""
         # This WILL FAIL - syntax checking doesn't exist
         validator = PineScriptValidator()
@@ -203,7 +203,7 @@ class TestPineScriptValidator:
         assert any("syntax" in msg for msg in error_messages)
         assert any("missing" in msg or "comma" in msg for msg in error_messages)
 
-    def test_strategy_declaration_validation(self):
+    def test_strategy_declaration_validation(self) -> None:
         """Test validation of strategy() declaration"""
         # This WILL FAIL - strategy validation doesn't exist
         script_without_strategy = """
@@ -220,7 +220,7 @@ plot(rsi)
         assert result.is_valid is False
         assert any("strategy() declaration required" in str(error) for error in result.errors)
 
-    def test_required_parameters_validation(self, valid_pine_v6_template):
+    def test_required_parameters_validation(self, valid_pine_v6_template) -> None:
         """Test validation of required strategy parameters"""
         # This WILL FAIL - parameter validation doesn't exist
         validator = PineScriptValidator()
@@ -231,7 +231,7 @@ plot(rsi)
         assert "commission_type" in result.strategy_params
         assert "commission_value" in result.strategy_params
 
-    def test_input_parameter_validation(self, valid_pine_v6_template):
+    def test_input_parameter_validation(self, valid_pine_v6_template) -> None:
         """Test validation of input parameters"""
         # This WILL FAIL - input validation doesn't exist
         validator = PineScriptValidator()
@@ -251,7 +251,7 @@ plot(rsi)
 class TestRSIStrategyValidator:
     """Test RSI-specific strategy validation"""
 
-    def test_rsi_indicator_validation(self, rsi_strategy_script):
+    def test_rsi_indicator_validation(self, rsi_strategy_script) -> None:
         """Test RSI indicator usage validation"""
         # This WILL FAIL - RSI validation doesn't exist
         validator = PineScriptValidator()
@@ -267,7 +267,7 @@ class TestRSIStrategyValidator:
         assert rsi_result.oversold_range == (10, 40)
         assert rsi_result.overbought_range == (60, 90)
 
-    def test_entry_exit_logic_validation(self, rsi_strategy_script):
+    def test_entry_exit_logic_validation(self, rsi_strategy_script) -> None:
         """Test entry and exit logic validation"""
         # This WILL FAIL - logic validation doesn't exist
         validator = PineScriptValidator()
@@ -278,7 +278,7 @@ class TestRSIStrategyValidator:
         assert "ta.crossover" in result.entry_methods
         assert "ta.crossunder" in result.exit_methods
 
-    def test_risk_management_validation(self, rsi_strategy_script):
+    def test_risk_management_validation(self, rsi_strategy_script) -> None:
         """Test risk management implementation validation"""
         # This WILL FAIL - risk validation doesn't exist
         validator = PineScriptValidator()
@@ -296,7 +296,7 @@ class TestRSIStrategyValidator:
 
         assert risk_reward_ratio >= 1.5  # Minimum requirement
 
-    def test_position_sizing_validation(self, rsi_strategy_script):
+    def test_position_sizing_validation(self, rsi_strategy_script) -> None:
         """Test position sizing logic validation"""
         # This WILL FAIL - position validation doesn't exist
         validator = PineScriptValidator()
@@ -310,7 +310,7 @@ class TestRSIStrategyValidator:
 class TestStrategyAnalyzer:
     """Test strategy analysis functionality"""
 
-    def test_strategy_analyzer_initialization(self):
+    def test_strategy_analyzer_initialization(self) -> None:
         """Test StrategyAnalyzer can be initialized"""
         # This WILL FAIL - StrategyAnalyzer doesn't exist
         analyzer = StrategyAnalyzer()
@@ -319,7 +319,7 @@ class TestStrategyAnalyzer:
         assert hasattr(analyzer, "extract_parameters")
         assert hasattr(analyzer, "check_best_practices")
 
-    def test_parameter_extraction(self, valid_pine_v6_template):
+    def test_parameter_extraction(self, valid_pine_v6_template) -> None:
         """Test extraction of strategy parameters"""
         # This WILL FAIL - parameter extraction doesn't exist
         analyzer = StrategyAnalyzer()
@@ -333,7 +333,7 @@ class TestStrategyAnalyzer:
         assert params["rsi_oversold"]["default"] == 30
         assert params["rsi_overbought"]["default"] == 70
 
-    def test_best_practices_check(self, rsi_strategy_script):
+    def test_best_practices_check(self, rsi_strategy_script) -> None:
         """Test best practices validation"""
         # This WILL FAIL - best practices check doesn't exist
         analyzer = StrategyAnalyzer()
@@ -346,7 +346,7 @@ class TestStrategyAnalyzer:
         assert practices.has_visualization is True
         assert practices.score >= 80  # Out of 100
 
-    def test_complexity_analysis(self, rsi_strategy_script):
+    def test_complexity_analysis(self, rsi_strategy_script) -> None:
         """Test strategy complexity analysis"""
         # This WILL FAIL - complexity analysis doesn't exist
         analyzer = StrategyAnalyzer()
@@ -357,7 +357,7 @@ class TestStrategyAnalyzer:
         assert complexity.variable_count >= 5
         assert complexity.complexity_score in ["low", "medium", "high"]
 
-    def test_performance_hints(self, rsi_strategy_script):
+    def test_performance_hints(self, rsi_strategy_script) -> None:
         """Test performance optimization hints"""
         # This WILL FAIL - performance analysis doesn't exist
         analyzer = StrategyAnalyzer()
@@ -371,7 +371,7 @@ class TestStrategyAnalyzer:
 class TestPineParser:
     """Test Pine Script parsing functionality"""
 
-    def test_pine_parser_initialization(self):
+    def test_pine_parser_initialization(self) -> None:
         """Test PineParser can be initialized"""
         # This WILL FAIL - PineParser doesn't exist
         parser = PineParser()
@@ -380,7 +380,7 @@ class TestPineParser:
         assert hasattr(parser, "extract_functions")
         assert hasattr(parser, "extract_variables")
 
-    def test_script_parsing(self, valid_pine_v6_template):
+    def test_script_parsing(self, valid_pine_v6_template) -> None:
         """Test parsing Pine Script structure"""
         # This WILL FAIL - parsing doesn't exist
         parser = PineParser()
@@ -392,7 +392,7 @@ class TestPineParser:
         assert len(ast.variable_declarations) >= 1
         assert len(ast.condition_blocks) >= 2
 
-    def test_function_extraction(self, valid_pine_v6_template):
+    def test_function_extraction(self, valid_pine_v6_template) -> None:
         """Test extraction of function calls"""
         # This WILL FAIL - function extraction doesn't exist
         parser = PineParser()
@@ -409,7 +409,7 @@ class TestPineParser:
         for func in expected_functions:
             assert func in functions
 
-    def test_variable_tracking(self, valid_pine_v6_template):
+    def test_variable_tracking(self, valid_pine_v6_template) -> None:
         """Test tracking of variable declarations and usage"""
         # This WILL FAIL - variable tracking doesn't exist
         parser = PineParser()
@@ -426,7 +426,7 @@ class TestPineParser:
 class TestSyntaxChecker:
     """Test Pine Script syntax checking"""
 
-    def test_syntax_checker_initialization(self):
+    def test_syntax_checker_initialization(self) -> None:
         """Test SyntaxChecker can be initialized"""
         # This WILL FAIL - SyntaxChecker doesn't exist
         checker = SyntaxChecker()
@@ -435,7 +435,7 @@ class TestSyntaxChecker:
         assert hasattr(checker, "check_brackets")
         assert hasattr(checker, "check_commas")
 
-    def test_bracket_matching(self):
+    def test_bracket_matching(self) -> None:
         """Test bracket and parentheses matching"""
         # This WILL FAIL - bracket checking doesn't exist
         checker = SyntaxChecker()
@@ -446,7 +446,7 @@ class TestSyntaxChecker:
         assert checker.check_brackets(valid_brackets) is True
         assert checker.check_brackets(invalid_brackets) is False
 
-    def test_comma_validation(self):
+    def test_comma_validation(self) -> None:
         """Test comma placement validation"""
         # This WILL FAIL - comma checking doesn't exist
         checker = SyntaxChecker()
@@ -457,7 +457,7 @@ class TestSyntaxChecker:
         assert checker.check_commas(valid_commas) is True
         assert checker.check_commas(invalid_commas) is False
 
-    def test_string_quote_matching(self):
+    def test_string_quote_matching(self) -> None:
         """Test string quote matching"""
         # This WILL FAIL - quote checking doesn't exist
         checker = SyntaxChecker()
@@ -472,7 +472,7 @@ class TestSyntaxChecker:
 class TestCLIValidation:
     """Test command-line validation interface"""
 
-    def test_validate_template_pine(self, tmp_path, valid_pine_v6_template):
+    def test_validate_template_pine(self, tmp_path, valid_pine_v6_template) -> None:
         """Test CLI validation of template.pine"""
         # This WILL FAIL - CLI validation doesn't exist
         template_file = tmp_path / "template.pine"
@@ -485,7 +485,7 @@ class TestCLIValidation:
         assert "✅ Pine Script v6 문법 확인" in result.output
         assert "✅ 전략 구조 검증" in result.output
 
-    def test_validate_rsi_basic_pine(self, tmp_path, rsi_strategy_script):
+    def test_validate_rsi_basic_pine(self, tmp_path, rsi_strategy_script) -> None:
         """Test CLI validation of rsi_basic.pine"""
         # This WILL FAIL - CLI validation doesn't exist
         rsi_file = tmp_path / "rsi_basic.pine"
@@ -497,7 +497,7 @@ class TestCLIValidation:
         assert result.exit_code == 0
         assert "✅ RSI 로직 검증 완료" in result.output
 
-    def test_validation_error_reporting(self, tmp_path, malformed_pine_script):
+    def test_validation_error_reporting(self, tmp_path, malformed_pine_script) -> None:
         """Test error reporting for invalid scripts"""
         # This WILL FAIL - error reporting doesn't exist
         invalid_file = tmp_path / "invalid.pine"
@@ -513,7 +513,7 @@ class TestCLIValidation:
 class TestTemplateValidation:
     """Test validation against strategy template"""
 
-    def test_template_structure_compliance(self, valid_pine_v6_template):
+    def test_template_structure_compliance(self, valid_pine_v6_template) -> None:
         """Test compliance with strategy template structure"""
         # This WILL FAIL - template compliance doesn't exist
         validator = PineScriptValidator()
@@ -527,7 +527,7 @@ class TestTemplateValidation:
         assert result.has_visualization is True
         assert result.compliance_score >= 90  # Out of 100
 
-    def test_required_sections_validation(self, valid_pine_v6_template):
+    def test_required_sections_validation(self, valid_pine_v6_template) -> None:
         """Test presence of required template sections"""
         # This WILL FAIL - section validation doesn't exist
         validator = PineScriptValidator()

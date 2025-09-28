@@ -23,25 +23,25 @@ class ValidationResult:
 
     is_valid: bool = False
     version: str | None = None
-    errors: list[str] = None
-    warnings: list[str] = None
-    declarations: list[str] = None
+    errors: list[str] | None = None
+    warnings: list[str] | None = None
+    declarations: list[str] | None = None
     strategy_name: str | None = None
-    strategy_params: dict[str, Any] = None
-    input_params: dict[str, dict[str, Any]] = None
+    strategy_params: dict[str, Any] | None = None
+    input_params: dict[str, dict[str, Any]] | None = None
     has_entry_conditions: bool = False
     has_exit_conditions: bool = False
-    entry_methods: list[str] = None
-    exit_methods: list[str] = None
+    entry_methods: list[str] | None = None
+    exit_methods: list[str] | None = None
     has_stop_loss: bool = False
     has_take_profit: bool = False
     stop_loss_method: str | None = None
     take_profit_method: str | None = None
     has_position_checks: bool = False
-    position_checks: list[str] = None
+    position_checks: list[str] | None = None
     prevents_multiple_entries: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize empty lists."""
         if self.errors is None:
             self.errors = []
@@ -64,7 +64,7 @@ class ValidationResult:
 class PineScriptValidator:
     """Validates Pine Script syntax and structure."""
 
-    def __init__(self, required_version: str = "6"):
+    def __init__(self, required_version: str = "6") -> None:
         """Initialize validator.
 
         Args:
@@ -103,8 +103,6 @@ class PineScriptValidator:
             Validation result
         """
         result = ValidationResult()
-        # Store original content for validation methods that need it
-        result._original_content = content
 
         # Check version
         version_check = self.check_version(content)
@@ -224,7 +222,7 @@ class PineScriptValidator:
 
         # Simplified template validation
         class TemplateResult:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.has_version_declaration = "//@version=" in content
                 self.has_strategy_declaration = "strategy(" in content
                 self.has_input_section = "input." in content
@@ -461,7 +459,7 @@ class StrategyAnalyzer:
         """Check best practices compliance."""
 
         class BestPracticesResult:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.has_version_declaration = "//@version=" in content
                 self.has_proper_naming = "strategy(" in content and '"' in content
                 self.has_input_validation = "minval=" in content and "maxval=" in content
@@ -486,7 +484,7 @@ class StrategyAnalyzer:
         """Analyze strategy complexity."""
 
         class ComplexityResult:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.line_count = len(content.split("\n"))
                 self.condition_count = content.count("if ") + content.count("if(")
                 self.variable_count = content.count(" = ") + content.count("=")
@@ -520,7 +518,7 @@ class PineParser:
         """Parse Pine Script into AST-like structure."""
 
         class ParseResult:
-            def __init__(self):
+            def __init__(self) -> None:
                 version_match = re.search(r"//@version=(\d+)", content)
                 self.version = version_match.group(1) if version_match else None
 
@@ -639,7 +637,7 @@ class TemplateValidator:
         """Validate template file."""
 
         class Result:
-            def __init__(self):
+            def __init__(self) -> None:
                 try:
                     validator = PineScriptValidator()
                     result = validator.validate_file(Path(file_path))
@@ -669,7 +667,7 @@ class RSIValidator:
         """Validate RSI strategy file."""
 
         class Result:
-            def __init__(self):
+            def __init__(self) -> None:
                 try:
                     validator = PineScriptValidator()
                     result = validator.validate_file(Path(file_path))

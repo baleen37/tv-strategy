@@ -29,7 +29,7 @@ except ImportError as e:
 class TestCLIArgumentParsing:
     """Test command-line argument parsing"""
 
-    def test_parse_backtest_arguments(self):
+    def test_parse_backtest_arguments(self) -> None:
         """Test parsing backtest command arguments"""
         # This WILL FAIL - argument parsing doesn't exist
         args = parse_arguments(["backtest", "--symbol", "BTCUSDT"])
@@ -40,7 +40,7 @@ class TestCLIArgumentParsing:
         assert hasattr(args, "initial_capital")
         assert hasattr(args, "commission_rate")
 
-    def test_parse_backtest_with_options(self):
+    def test_parse_backtest_with_options(self) -> None:
         """Test parsing backtest with all options"""
         # This WILL FAIL - full argument parsing doesn't exist
         args = parse_arguments(
@@ -68,7 +68,7 @@ class TestCLIArgumentParsing:
         assert args.data_dir == "custom_data/"
         assert args.output_dir == "results/"
 
-    def test_parse_download_arguments(self):
+    def test_parse_download_arguments(self) -> None:
         """Test parsing data download command arguments"""
         # This WILL FAIL - download command parsing doesn't exist
         args = parse_arguments(
@@ -80,7 +80,7 @@ class TestCLIArgumentParsing:
         assert args.timeframe == "1d"
         assert args.limit == 365
 
-    def test_parse_validate_arguments(self):
+    def test_parse_validate_arguments(self) -> None:
         """Test parsing Pine Script validation arguments"""
         # This WILL FAIL - validate command parsing doesn't exist
         args = parse_arguments(["validate", "--file", "src/strategies/rsi_basic.pine"])
@@ -88,13 +88,13 @@ class TestCLIArgumentParsing:
         assert args.command == "validate"
         assert args.file == "src/strategies/rsi_basic.pine"
 
-    def test_invalid_command_handling(self):
+    def test_invalid_command_handling(self) -> None:
         """Test handling of invalid commands"""
         # This WILL FAIL - error handling doesn't exist
         with pytest.raises(SystemExit):
             parse_arguments(["invalid_command"])
 
-    def test_missing_required_arguments(self):
+    def test_missing_required_arguments(self) -> None:
         """Test handling of missing required arguments"""
         # This WILL FAIL - validation doesn't exist
         with pytest.raises(SystemExit):
@@ -124,7 +124,7 @@ class TestQuickstartWorkflow:
         sample_data.to_parquet(data_file)
         return data_file
 
-    def test_quickstart_scenario_1_data_download(self, tmp_path):
+    def test_quickstart_scenario_1_data_download(self, tmp_path) -> None:
         """Test: python -m src.data.ccxt_client download BTCUSDT 1d 100"""
         # This WILL FAIL - quickstart workflow doesn't exist
         with patch("src.data.ccxt_client.DataDownloader") as mock_downloader_class:
@@ -138,7 +138,7 @@ class TestQuickstartWorkflow:
             assert result.file_path.name == "BTCUSDT_1d_100.parquet"
             assert "📊 Loading data: BTCUSDT 1d (100 bars)" in result.output
 
-    def test_quickstart_scenario_2_basic_backtest(self, mock_data_file):
+    def test_quickstart_scenario_2_basic_backtest(self, mock_data_file) -> None:
         """Test: python -m src.main backtest --symbol BTCUSDT"""
         # This WILL FAIL - main backtest doesn't exist
         with patch("src.main.BacktestEngine") as mock_engine_class:
@@ -160,7 +160,7 @@ class TestQuickstartWorkflow:
             assert "🎯 Win Rate: 65.0%" in result.output
             assert "✅ Backtest complete!" in result.output
 
-    def test_quickstart_scenario_3_pine_validation(self, tmp_path):
+    def test_quickstart_scenario_3_pine_validation(self, tmp_path) -> None:
         """Test: python -m tests.test_pine src/strategies/rsi_basic.pine"""
         # This WILL FAIL - Pine validation workflow doesn't exist
         pine_script = """
@@ -183,7 +183,7 @@ if ta.crossunder(rsi, 70)
         assert "✅ 전략 구조 검증" in result.output
         assert "✅ RSI 로직 검증 완료" in result.output
 
-    def test_quickstart_scenario_4_coverage_verification(self):
+    def test_quickstart_scenario_4_coverage_verification(self) -> None:
         """Test: pytest --cov=src --cov-report=term-missing"""
         # This WILL FAIL - coverage workflow doesn't exist
         result = quickstart_workflow.verify_coverage()
@@ -197,7 +197,7 @@ class TestFullBacktestWorkflow:
     """Test complete backtest workflow integration"""
 
     @pytest.fixture
-    def sample_cli_args(self):
+    def sample_cli_args(self) -> None:
         """Sample CLI arguments for testing"""
         return argparse.Namespace(
             command="backtest",
@@ -210,7 +210,7 @@ class TestFullBacktestWorkflow:
             strategy="rsi_basic",
         )
 
-    def test_full_workflow_data_to_results(self, sample_cli_args, tmp_path):
+    def test_full_workflow_data_to_results(self, sample_cli_args, tmp_path) -> None:
         """Test complete workflow: data download → backtest → results"""
         # This WILL FAIL - full workflow doesn't exist
         with (
@@ -254,7 +254,7 @@ class TestFullBacktestWorkflow:
             assert mock_val.validate_file.called
             assert mock_bt.run_backtest.called
 
-    def test_workflow_with_existing_data(self, sample_cli_args, tmp_path):
+    def test_workflow_with_existing_data(self, sample_cli_args, tmp_path) -> None:
         """Test workflow when data file already exists"""
         # This WILL FAIL - data existence check doesn't exist
         existing_data = tmp_path / "data" / "BTCUSDT_1d_100.parquet"
@@ -274,7 +274,7 @@ class TestFullBacktestWorkflow:
             assert result.success is True
             assert "Using existing data file" in result.messages
 
-    def test_workflow_data_download_failure(self, sample_cli_args):
+    def test_workflow_data_download_failure(self, sample_cli_args) -> None:
         """Test workflow handling data download failure"""
         # This WILL FAIL - error handling doesn't exist
         with patch("src.data.ccxt_client.DataDownloader") as mock_downloader:
@@ -287,7 +287,7 @@ class TestFullBacktestWorkflow:
             assert result.success is False
             assert "data download failed" in result.error_message.lower()
 
-    def test_workflow_invalid_strategy(self, sample_cli_args, tmp_path):
+    def test_workflow_invalid_strategy(self, sample_cli_args, tmp_path) -> None:
         """Test workflow with invalid Pine Script strategy"""
         # This WILL FAIL - strategy validation doesn't exist
         invalid_pine = tmp_path / "strategies" / "invalid.pine"
@@ -309,7 +309,7 @@ class TestFullBacktestWorkflow:
             assert result.success is False
             assert "strategy validation failed" in result.error_message.lower()
 
-    def test_workflow_backtest_execution_failure(self, sample_cli_args, tmp_path):
+    def test_workflow_backtest_execution_failure(self, sample_cli_args, tmp_path) -> None:
         """Test workflow handling backtest execution failure"""
         # This WILL FAIL - backtest error handling doesn't exist
         with (
@@ -336,7 +336,7 @@ class TestFullBacktestWorkflow:
 class TestMainCLIInterface:
     """Test main CLI interface"""
 
-    def test_main_function_backtest_command(self):
+    def test_main_function_backtest_command(self) -> None:
         """Test main function with backtest command"""
         # This WILL FAIL - main function doesn't exist
         with (
@@ -353,7 +353,7 @@ class TestMainCLIInterface:
             assert exit_code == 0
             mock_workflow.execute.assert_called_once()
 
-    def test_main_function_download_command(self):
+    def test_main_function_download_command(self) -> None:
         """Test main function with download command"""
         # This WILL FAIL - main function doesn't exist
         with (
@@ -382,7 +382,7 @@ class TestMainCLIInterface:
             assert exit_code == 0
             mock_workflow.data_download.assert_called_once()
 
-    def test_main_function_validate_command(self):
+    def test_main_function_validate_command(self) -> None:
         """Test main function with validate command"""
         # This WILL FAIL - main function doesn't exist
         with (
@@ -399,7 +399,7 @@ class TestMainCLIInterface:
             assert exit_code == 0
             mock_workflow.validate_pine_script.assert_called_once()
 
-    def test_main_function_error_handling(self):
+    def test_main_function_error_handling(self) -> None:
         """Test main function error handling"""
         # This WILL FAIL - error handling doesn't exist
         with (
@@ -420,7 +420,7 @@ class TestMainCLIInterface:
 class TestBacktestCLI:
     """Test BacktestCLI class functionality"""
 
-    def test_cli_initialization(self):
+    def test_cli_initialization(self) -> None:
         """Test BacktestCLI can be initialized"""
         # This WILL FAIL - BacktestCLI doesn't exist
         cli = BacktestCLI()
@@ -429,7 +429,7 @@ class TestBacktestCLI:
         assert hasattr(cli, "setup_logging")
         assert hasattr(cli, "validate_args")
 
-    def test_cli_logging_setup(self):
+    def test_cli_logging_setup(self) -> None:
         """Test CLI logging configuration"""
         # This WILL FAIL - logging setup doesn't exist
         cli = BacktestCLI()
@@ -441,7 +441,7 @@ class TestBacktestCLI:
         logger = logging.getLogger()
         assert logger.level == logging.DEBUG
 
-    def test_cli_argument_validation(self):
+    def test_cli_argument_validation(self) -> None:
         """Test CLI argument validation"""
         # This WILL FAIL - validation doesn't exist
         cli = BacktestCLI()
@@ -464,7 +464,7 @@ class TestBacktestCLI:
 
         assert cli.validate_args(invalid_args) is False
 
-    def test_cli_progress_reporting(self):
+    def test_cli_progress_reporting(self) -> None:
         """Test CLI progress reporting"""
         # This WILL FAIL - progress reporting doesn't exist
         cli = BacktestCLI()
@@ -481,7 +481,7 @@ class TestBacktestCLI:
 class TestErrorHandling:
     """Test comprehensive error handling across integration"""
 
-    def test_network_error_handling(self):
+    def test_network_error_handling(self) -> None:
         """Test handling of network errors during data download"""
         # This WILL FAIL - network error handling doesn't exist
         args = argparse.Namespace(command="backtest", symbol="BTCUSDT", timeframe="1d")
@@ -497,7 +497,7 @@ class TestErrorHandling:
             assert "network" in result.error_message.lower()
             assert result.retry_suggested is True
 
-    def test_disk_space_error_handling(self):
+    def test_disk_space_error_handling(self) -> None:
         """Test handling of disk space errors"""
         # This WILL FAIL - disk space error handling doesn't exist
         args = argparse.Namespace(command="backtest", symbol="BTCUSDT")
@@ -512,7 +512,7 @@ class TestErrorHandling:
             assert result.success is False
             assert "disk space" in result.error_message.lower()
 
-    def test_invalid_data_error_handling(self):
+    def test_invalid_data_error_handling(self) -> None:
         """Test handling of invalid/corrupted data"""
         # This WILL FAIL - data validation doesn't exist
         args = argparse.Namespace(command="backtest", symbol="BTCUSDT")
@@ -537,7 +537,7 @@ class TestErrorHandling:
             assert result.success is False
             assert "invalid data" in result.error_message.lower()
 
-    def test_strategy_compilation_error(self):
+    def test_strategy_compilation_error(self) -> None:
         """Test handling of Pine Script compilation errors"""
         # This WILL FAIL - compilation error handling doesn't exist
         args = argparse.Namespace(
@@ -561,7 +561,7 @@ class TestErrorHandling:
 class TestCoverageValidation:
     """Test coverage validation requirements"""
 
-    def test_95_percent_coverage_requirement(self):
+    def test_95_percent_coverage_requirement(self) -> None:
         """Test that 95% coverage requirement is enforced"""
         # This WILL FAIL - coverage validation doesn't exist
         result = quickstart_workflow.verify_coverage()
@@ -569,7 +569,7 @@ class TestCoverageValidation:
         assert result.coverage_percentage >= 95
         assert result.constitution_compliant is True
 
-    def test_coverage_reporting_format(self):
+    def test_coverage_reporting_format(self) -> None:
         """Test coverage reporting matches expected format"""
         # This WILL FAIL - coverage reporting doesn't exist
         result = quickstart_workflow.verify_coverage(report_format="term-missing")
@@ -577,7 +577,7 @@ class TestCoverageValidation:
         assert "src/" in result.report
         assert "Missing lines" in result.report or result.coverage_percentage == 100
 
-    def test_coverage_failure_handling(self):
+    def test_coverage_failure_handling(self) -> None:
         """Test handling when coverage is below 95%"""
         # This WILL FAIL - coverage failure handling doesn't exist
         with patch("pytest.main") as mock_pytest:

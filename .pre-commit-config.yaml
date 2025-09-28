@@ -13,14 +13,14 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.15
+    rev: v0.3.7
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         language_version: python3.11
 
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.3.0
     hooks:
       - id: black
         language_version: python3.11
@@ -38,12 +38,13 @@ repos:
       - id: mypy
         language_version: python3.11
         additional_dependencies: [types-all]
+        args: [--ignore-missing-imports]
 
   - repo: local
     hooks:
       - id: validate-pine-scripts
         name: Validate Pine Scripts
-        entry: python tests/validator.py
+        entry: python -m src.strategies.validator
         language: python
         files: \.pine$
         pass_filenames: true
