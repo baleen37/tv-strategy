@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current Development State
 
-**Branch**: `main`  
-**Status**: Production-ready implementation  
+**Branch**: `main`
+**Status**: Production-ready implementation
 **Key Specification**: `specs/001-tradingview-pine-script/spec.md`
 
 **Implemented features:**
@@ -27,32 +27,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Development Workflow
 ```bash
 # Environment setup
-make setup                    # Install dependencies and setup environment
-source venv/bin/activate     # Activate virtual environment
+make install                # Install dependencies and setup environment
+source venv/bin/activate   # Activate virtual environment
 
-# Code quality
-make format                  # Format Python code with Black
-make lint                    # Run Ruff linting and mypy
-make test                    # Run all tests with coverage
-make ci-local               # Run full CI pipeline locally
+# Code quality & testing
+make check                 # Check code quality (format + lint + types)
+make test                  # Run tests with coverage
+make ci                    # Run full CI pipeline (check + test)
+make clean                 # Clean cache files
 
-# Strategy validation
-make validate-all           # Validate all Pine Script files
-python -m src.strategies.validator strategies/[file].pine    # Validate specific strategy
+# Application commands
+make run                   # Run backtest [SYMBOL=BTCUSDT]
+make data                  # Download data [SYMBOL=BTCUSDT]
 
-# Backtesting commands
-python -m src.main backtest --symbol BTCUSDT    # Run basic backtest
-python -m src.main download --symbol BTCUSDT --timeframe 1d --limit 100    # Download data
-python -m src.main validate --file src/strategies/rsi_basic.pine    # Validate Pine Script
+# Custom parameters
+make run SYMBOL=ETHUSDT
+make data SYMBOL=BTCUSDT
 ```
 
 ### Pre-commit Hooks
 Automatically run on commit:
 - Python code formatting (Black)
-- Import sorting (isort) 
-- Linting (Ruff)
-- Type checking (mypy)
-- Pine Script validation
+- Import sorting (isort)
+- Linting (Ruff with auto-fix)
+- Basic file checks (whitespace, YAML)
+
+### Auto-merge Setup
+- ✅ Auto-merge for dependabot PRs
+- ✅ Auto-merge for branches with `auto-merge` prefix
+- ✅ Requires all CI checks to pass
+- ✅ Squash merge with automated commit messages
 
 ## Project Architecture
 
@@ -126,7 +130,7 @@ tv-strategy/
 
 ### Strategy Development Workflow
 1. **Pine Script Development**: Create strategy in `src/strategies/` following template
-2. **Validation**: Run `python -m src.strategies.validator [file].pine` 
+2. **Validation**: Run `python -m src.strategies.validator [file].pine`
 3. **Python Testing**: Add comprehensive tests for strategy logic
 4. **Backtesting**: Test with `python -m src.main backtest --symbol [SYMBOL]`
 5. **Performance Analysis**: Review metrics and optimize parameters
@@ -140,48 +144,39 @@ The system is designed for future trading bot integration:
 
 ## Common Development Tasks
 
-### Running Tests
+### Development & Testing
 ```bash
-# Full test suite with coverage
-make test
+# Quick development workflow
+make check                 # Check code quality (no modifications)
+make test                  # Run test suite with coverage
+make ci                    # Full CI pipeline (check + test)
 
-# Single test file
-python -m pytest tests/test_backtest.py -v
-
-# Coverage report
-python -m pytest --cov=src --cov-report=html
+# Individual commands
+make clean                 # Clean cache files
+python -m pytest tests/test_backtest.py -v  # Single test file
 ```
 
-### Data Management
+### Backtesting & Data
 ```bash
-# Download fresh market data
-python -m src.main download --symbol BTCUSDT --timeframe 1d --limit 500
-
-# List available data files
-ls data/
-
-# View data file info
-python -c "import pandas as pd; print(pd.read_parquet('data/BTCUSDT_1d_100.parquet').info())"
-```
-
-### Strategy Backtesting
-```bash
-# Quick backtest with defaults
-python -m src.main backtest --symbol BTCUSDT
+# Simple commands
+make data                  # Download BTCUSDT data
+make run                   # Run BTCUSDT backtest
 
 # Custom parameters
-python -m src.main backtest --symbol ETHUSDT --initial-capital 50000 --commission-rate 0.002
+make data SYMBOL=ETHUSDT
+make run SYMBOL=ETHUSDT
 
-# Advanced backtest through Makefile
-make backtest-custom SYMBOL=BTCUSDT PERIOD=2y
+# View data files
+ls data/                   # List downloaded data
 ```
 
 ### Debugging Common Issues
 - **Import errors**: Ensure virtual environment is activated with `source venv/bin/activate`
-- **Lint failures**: Run `make format` then `make lint` before committing
+- **Code quality failures**: Run `make check` to see issues, then fix manually
 - **Test failures**: Check that test coverage remains above 95%
+- **CI failures**: Run `make ci` locally before pushing
 - **API rate limits**: Binance free tier has request limits - use cached data when possible
-- **Data file not found**: Download data first with `python -m src.main download`
+- **Data file not found**: Download data first with `make data`
 - **Decimal precision errors**: All financial calculations must use `decimal.Decimal`
 
 ### Key Implementation Details

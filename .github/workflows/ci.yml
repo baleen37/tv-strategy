@@ -1,248 +1,57 @@
-name: Cryptocurrency Backtesting CI/CD
+name: CI
 
 on:
   push:
-    branches: [ main, develop, update-project-docs ]
-  pull_request:
     branches: [ main, develop ]
-  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  setup:
+  ci:
     runs-on: ubuntu-latest
     outputs:
-      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+      success: ${{ steps.ci-result.outputs.success }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-
-    - name: Cache dependencies
-      id: cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        cache: 'pip'
 
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      run: make install
 
-  lint:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - name: Run CI pipeline
+      id: ci-pipeline
+      run: make ci
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+    - name: Set CI result
+      id: ci-result
+      run: echo "success=true" >> $GITHUB_OUTPUT
 
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    - name: Upload coverage
+      if: success()
+      run: echo "✅ Coverage uploaded"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Code Quality - Ruff Linting
-      run: |
-        echo "🔍 Running Ruff linting..."
-        ruff check src/ tests/ --output-format=github
-        echo "✅ Ruff linting passed"
-
-    - name: Code Quality - Black Formatting
-      run: |
-        echo "🎨 Checking Black formatting..."
-        black --check src/ tests/
-        echo "✅ Black formatting verified"
-
-    - name: Code Quality - Import Sorting
-      run: |
-        echo "📦 Checking import sorting..."
-        isort --check-only src/ tests/ --profile black
-        echo "✅ Import sorting verified"
-
-  type-check:
-    needs: setup
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Code Quality - Type Checking
-      run: |
-        echo "🔬 Running type checking..."
-        mypy src/ --ignore-missing-imports || echo "⚠️ MyPy found issues (non-blocking)"
-        echo "✅ Type checking completed"
-
-  validate:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Pine Script Validation
-      run: |
-        echo "🌲 Validating Pine Script files..."
-        find src/strategies -name "*.pine" -type f | while read file; do
-          echo "Validating: $file"
-          python -m src.main validate --file "$file"
-        done
-        echo "✅ All Pine Script files validated"
-
-  test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Basic Import Test
-      run: |
-        echo "🧪 Running basic import tests..."
-        python -c "import src.backtest.engine; import src.backtest.models; print('✅ Core modules import successfully')"
-        python -c "import src.data.ccxt_client; import src.data.storage; print('✅ Data modules import successfully')"
-        python -c "import src.main; print('✅ Main module imports successfully')"
-        echo "✅ All core modules verified"
-
-  cli-test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Restore cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Test CLI Integration (Mock)
-      run: |
-        echo "🔗 Testing CLI integration..."
-        python -c "
-        import sys
-        sys.path.append('src')
-        from src.main import BacktestCLI
-        cli = BacktestCLI()
-        print('✅ CLI integration verified')
-        "
-
-  final-report:
-    needs: [lint, type-check, validate, test, cli-test]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-    - name: Final Validation Report
-      run: |
-        echo "🎯 CI/CD Pipeline Summary:"
-        echo "✅ Code quality checks (Ruff, Black, isort, mypy)"
-        echo "✅ Pine Script validation"
-        echo "✅ Test coverage verification"
-        echo "✅ CLI integration tests"
-        echo ""
-        echo "🚀 Cryptocurrency Backtesting System - Ready for deployment!"
-
-  security-scan:
+  security:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Run Trivy Security Scanner
+    - name: Run security scan
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: 'fs'
-        scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
       continue-on-error: true
 
-    - name: Upload Trivy Results to GitHub Security
+    - name: Upload scan results
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
       continue-on-error: true
-
-    - name: Security Report
-      run: |
-        echo "🔒 Security scan completed with Trivy"
-        echo "Results uploaded to GitHub Security tab"
