@@ -21,14 +21,20 @@ install: ## Install dependencies
 
 # Code quality checks (CI-friendly)
 check: ## Check code quality (format + lint + types)
-	black --check $(SRC)
+	@echo "🔍 Running code quality checks..."
+	@echo "  📝 Checking formatting..."
+	ruff format --check $(SRC)
+	@echo "  📋 Checking import sorting..."
 	isort --check-only $(SRC) --profile black
+	@echo "  🔧 Running linter..."
 	ruff check $(SRC)
-	mypy $(SRC) --ignore-missing-imports || echo "⚠️ Type checking found issues (non-blocking)"
+	@echo "  🏷️  Type checking..."
+	@mypy $(SRC) --ignore-missing-imports || echo "⚠️  Type checking issues found"
 
 # Run tests
 test: ## Run tests with coverage
-	$(PYTHON) -m pytest tests/ -v --cov=src --cov-report=term --cov-fail-under=95
+	@echo "🧪 Running tests with coverage..."
+	$(PYTHON) -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-fail-under=95
 
 # Clean cache files
 clean: ## Clean cache files

@@ -270,7 +270,6 @@ class TestFullBacktestWorkflow:
             patch("src.data.ccxt_client.DataDownloader") as mock_downloader,
             patch("src.backtest.engine.BacktestEngine") as mock_engine,
         ):
-
             # Mock successful data download
             mock_dl = Mock()
             mock_dl.download.return_value = tmp_path / "BTCUSDT_1d_100.parquet"
@@ -297,7 +296,6 @@ class TestMainCLIInterface:
             patch("sys.argv", ["main.py", "backtest", "--symbol", "BTCUSDT"]),
             patch("src.main.full_workflow") as mock_workflow,
         ):
-
             mock_result = Mock()
             mock_result.success = True
             mock_workflow.execute.return_value = mock_result
@@ -326,7 +324,6 @@ class TestMainCLIInterface:
             ),
             patch("src.main.quickstart_workflow") as mock_workflow,
         ):
-
             mock_result = Mock()
             mock_result.success = True
             mock_workflow.data_download.return_value = mock_result
@@ -343,7 +340,6 @@ class TestMainCLIInterface:
             patch("sys.argv", ["main.py", "validate", "--file", "strategy.pine"]),
             patch("src.main.quickstart_workflow") as mock_workflow,
         ):
-
             mock_result = Mock()
             mock_result.success = True
             mock_workflow.validate_pine_script.return_value = mock_result
@@ -360,7 +356,6 @@ class TestMainCLIInterface:
             patch("sys.argv", ["main.py", "backtest", "--symbol", "BTCUSDT"]),
             patch("src.main.full_workflow") as mock_workflow,
         ):
-
             mock_result = Mock()
             mock_result.success = False
             mock_result.error_message = "Test error"
@@ -475,7 +470,6 @@ class TestErrorHandling:
             patch("src.data.ccxt_client.DataDownloader") as mock_downloader,
             patch("src.backtest.engine.BacktestEngine") as mock_engine,
         ):
-
             # Mock data download success
             mock_dl = Mock()
             mock_dl.download.return_value = Path("data.parquet")

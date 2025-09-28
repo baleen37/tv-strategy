@@ -133,9 +133,9 @@ class QuickstartWorkflow:
             result = engine.run_backtest(market_data, symbol)
 
             # Format results
-            output += f"📈 Total Return: {result.total_return*100:.1f}%\n"
-            output += f"📉 Max Drawdown: {result.max_drawdown*100:.1f}%\n"
-            output += f"🎯 Win Rate: {result.win_rate*100:.1f}%\n"
+            output += f"📈 Total Return: {result.total_return * 100:.1f}%\n"
+            output += f"📉 Max Drawdown: {result.max_drawdown * 100:.1f}%\n"
+            output += f"🎯 Win Rate: {result.win_rate * 100:.1f}%\n"
             output += f"📊 Total Trades: {result.total_trades}\n"
             output += "✅ Backtest complete!\n"
 
@@ -422,9 +422,9 @@ class BacktestCLI:
                 if result.success:
                     print("✅ Backtest completed successfully")
                     if result.backtest_result:
-                        print(f"📈 Total Return: {result.backtest_result.total_return*100:.1f}%")
-                        print(f"📉 Max Drawdown: {result.backtest_result.max_drawdown*100:.1f}%")
-                        print(f"🎯 Win Rate: {result.backtest_result.win_rate*100:.1f}%")
+                        print(f"📈 Total Return: {result.backtest_result.total_return * 100:.1f}%")
+                        print(f"📉 Max Drawdown: {result.backtest_result.max_drawdown * 100:.1f}%")
+                        print(f"🎯 Win Rate: {result.backtest_result.win_rate * 100:.1f}%")
                     return 0
                 else:
                     print(f"❌ {result.error_message}")
