@@ -5,7 +5,7 @@ strategy("RSI Basic Strategy", overlay=true, initial_capital=10000, commission_t
 // RSI BASIC STRATEGY - Pine Script v6
 //==============================================================================
 // Simple RSI-based momentum strategy for cryptocurrency trading.
-// 
+//
 // Strategy Logic:
 // - Enter long when RSI crosses above oversold level (30)
 // - Exit long when RSI crosses below overbought level (70)
@@ -106,7 +106,7 @@ if long_exit and strategy.position_size > 0
 //------------------------------------------------------------------------------
 
 // Plot RSI with color coding
-rsi_color = rsi_value > overbought_level ? color.red : 
+rsi_color = rsi_value > overbought_level ? color.red :
            rsi_value < oversold_level ? color.green : color.blue
 
 plot(rsi_value, title="RSI", color=rsi_color, linewidth=2)
@@ -117,22 +117,22 @@ hline(oversold_level, "Oversold", color=color.green, linestyle=hline.style_dashe
 hline(50, "Midline", color=color.gray, linestyle=hline.style_dotted, linewidth=1)
 
 // Background shading for RSI zones
-bgcolor(rsi_value > overbought_level ? color.new(color.red, 90) : 
-        rsi_value < oversold_level ? color.new(color.green, 90) : na, 
+bgcolor(rsi_value > overbought_level ? color.new(color.red, 90) :
+        rsi_value < oversold_level ? color.new(color.green, 90) : na,
         title="RSI Zones")
 
 // Entry and exit signals on chart
-plotshape(long_entry, title="Buy Signal", style=shape.triangleup, location=location.belowbar, 
+plotshape(long_entry, title="Buy Signal", style=shape.triangleup, location=location.belowbar,
           color=color.green, size=size.small, text="BUY")
 
-plotshape(long_exit, title="Sell Signal", style=shape.triangledown, location=location.abovebar, 
+plotshape(long_exit, title="Sell Signal", style=shape.triangledown, location=location.abovebar,
           color=color.red, size=size.small, text="SELL")
 
 // Plot stop loss and take profit levels
-plot(strategy.position_size > 0 ? long_stop_loss : na, title="Stop Loss", color=color.red, 
+plot(strategy.position_size > 0 ? long_stop_loss : na, title="Stop Loss", color=color.red,
      linewidth=1, style=plot.style_stepline)
 
-plot(strategy.position_size > 0 ? long_take_profit : na, title="Take Profit", color=color.green, 
+plot(strategy.position_size > 0 ? long_take_profit : na, title="Take Profit", color=color.green,
      linewidth=1, style=plot.style_stepline)
 
 //------------------------------------------------------------------------------
@@ -142,41 +142,41 @@ plot(strategy.position_size > 0 ? long_take_profit : na, title="Take Profit", co
 // Create information table
 if barstate.islast
     var table info_table = table.new(position.top_right, 2, 8, bgcolor=color.white, border_width=1)
-    
+
     // Header
     table.cell(info_table, 0, 0, "RSI Strategy", text_color=color.black, text_size=size.normal, bgcolor=color.gray)
     table.cell(info_table, 1, 0, "Status", text_color=color.black, text_size=size.normal, bgcolor=color.gray)
-    
+
     // Current RSI
     table.cell(info_table, 0, 1, "RSI Value", text_color=color.black, text_size=size.small)
-    rsi_display_color = rsi_value > overbought_level ? color.red : 
+    rsi_display_color = rsi_value > overbought_level ? color.red :
                        rsi_value < oversold_level ? color.green : color.blue
     table.cell(info_table, 1, 1, str.tostring(math.round(rsi_value, 2)), text_color=rsi_display_color, text_size=size.small)
-    
+
     // Position status
     table.cell(info_table, 0, 2, "Position", text_color=color.black, text_size=size.small)
     position_text = strategy.position_size > 0 ? "LONG" : "FLAT"
     position_color = strategy.position_size > 0 ? color.green : color.gray
     table.cell(info_table, 1, 2, position_text, text_color=position_color, text_size=size.small)
-    
+
     // Entry price
     table.cell(info_table, 0, 3, "Entry Price", text_color=color.black, text_size=size.small)
     entry_price_text = strategy.position_size > 0 ? str.tostring(math.round(strategy.position_avg_price, 2)) : "---"
     table.cell(info_table, 1, 3, entry_price_text, text_color=color.black, text_size=size.small)
-    
+
     // Risk levels
     table.cell(info_table, 0, 4, "Stop Loss", text_color=color.black, text_size=size.small)
     sl_text = strategy.position_size > 0 ? str.tostring(math.round(long_stop_loss, 2)) : "---"
     table.cell(info_table, 1, 4, sl_text, text_color=color.red, text_size=size.small)
-    
+
     table.cell(info_table, 0, 5, "Take Profit", text_color=color.black, text_size=size.small)
     tp_text = strategy.position_size > 0 ? str.tostring(math.round(long_take_profit, 2)) : "---"
     table.cell(info_table, 1, 5, tp_text, text_color=color.green, text_size=size.small)
-    
+
     // Performance metrics
     table.cell(info_table, 0, 6, "Total Trades", text_color=color.black, text_size=size.small)
     table.cell(info_table, 1, 6, str.tostring(strategy.closedtrades), text_color=color.black, text_size=size.small)
-    
+
     table.cell(info_table, 0, 7, "Win Rate", text_color=color.black, text_size=size.small)
     win_rate = strategy.closedtrades > 0 ? math.round(strategy.wintrades / strategy.closedtrades * 100, 1) : 0
     win_rate_color = win_rate >= 50 ? color.green : color.red
@@ -187,24 +187,24 @@ if barstate.islast
 //------------------------------------------------------------------------------
 
 // Entry alert
-alertcondition(long_entry, title="RSI Long Entry", 
+alertcondition(long_entry, title="RSI Long Entry",
                message="RSI Long Entry Signal: {{ticker}} @ {{close}} | RSI: " + str.tostring(math.round(rsi_value, 2)))
 
 // Exit alert
-alertcondition(long_exit, title="RSI Long Exit", 
+alertcondition(long_exit, title="RSI Long Exit",
                message="RSI Long Exit Signal: {{ticker}} @ {{close}} | RSI: " + str.tostring(math.round(rsi_value, 2)))
 
 // Risk management alerts
-alertcondition(ta.crossunder(close, long_stop_loss), title="Stop Loss Hit", 
+alertcondition(ta.crossunder(close, long_stop_loss), title="Stop Loss Hit",
                message="Stop Loss Triggered: {{ticker}} @ {{close}}")
 
-alertcondition(ta.crossover(close, long_take_profit), title="Take Profit Hit", 
+alertcondition(ta.crossover(close, long_take_profit), title="Take Profit Hit",
                message="Take Profit Triggered: {{ticker}} @ {{close}}")
 
 //==============================================================================
 // STRATEGY NOTES
 //==============================================================================
-// 
+//
 // Configuration Recommendations:
 // - RSI Period: 14 (standard)
 // - Oversold: 30 (conservative entry)
@@ -216,7 +216,7 @@ alertcondition(ta.crossover(close, long_take_profit), title="Take Profit Hit",
 // Best Timeframes:
 // - 1H, 4H, 1D for swing trading
 // - 15M, 30M for day trading
-// 
+//
 // Market Conditions:
 // - Works best in trending markets with pullbacks
 // - May generate false signals in choppy/sideways markets

@@ -103,7 +103,10 @@ class TestCCXTClient:
             [[1640995200000, 47000.0, 48000.0, 46500.0, 47500.0, 1.5]],
         ]
 
-        with patch("ccxt.binance", return_value=mock_exchange):
+        with (
+            patch("ccxt.binance", return_value=mock_exchange),
+            patch("time.sleep"),
+        ):  # Mock sleep to avoid hanging
             client = CCXTClient("binance")
             data = client.download_data("BTC/USDT", "1d", 1)
 
@@ -115,7 +118,10 @@ class TestCCXTClient:
         # This WILL FAIL - network error handling doesn't exist
         mock_exchange.fetch_ohlcv.side_effect = Exception("Network error")
 
-        with patch("ccxt.binance", return_value=mock_exchange):
+        with (
+            patch("ccxt.binance", return_value=mock_exchange),
+            patch("time.sleep"),
+        ):  # Mock sleep to avoid hanging
             client = CCXTClient("binance")
 
             with pytest.raises(CCXTError, match="Network error"):

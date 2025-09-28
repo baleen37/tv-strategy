@@ -19,11 +19,11 @@ class Strategy:
     author: str
     description: str
     pine_script_path: str      # Path to Pine Script file
-    
+
     # Validation
     min_capital: float = 1000.0
     max_positions: int = 1
-    
+
     # State transitions
     status: Literal['draft', 'testing', 'active', 'deprecated']
 ```
@@ -46,7 +46,7 @@ class MarketData:
     volume: Decimal
     quote_volume: Decimal      # Volume in quote currency
     trades_count: int          # Number of trades
-    
+
     # Data quality
     is_complete: bool          # No missing data
     is_validated: bool         # Passed quality checks
@@ -66,13 +66,13 @@ class Signal:
     signal_type: Literal['buy', 'sell', 'hold']
     strength: float            # -1.0 to 1.0
     confidence: float          # 0.0 to 1.0
-    
+
     # Entry conditions
     entry_price: Decimal
     stop_loss: Decimal
     take_profit: Decimal
     position_size: Decimal
-    
+
     # Metadata
     indicators: dict           # Indicator values at signal time
     reason: str               # Human-readable explanation
@@ -90,28 +90,28 @@ class Trade:
     signal_id: str
     symbol: str
     side: Literal['long', 'short']  # Initially long only
-    
+
     # Entry
     entry_time: datetime
     entry_price: Decimal
     entry_commission: Decimal
-    
+
     # Exit
     exit_time: Optional[datetime]
     exit_price: Optional[Decimal]
     exit_commission: Optional[Decimal]
     exit_reason: Optional[str]  # "stop_loss", "take_profit", "signal"
-    
+
     # Position
     quantity: Decimal
     value: Decimal              # Position value in quote currency
-    
+
     # Results
     pnl: Optional[Decimal]      # Profit/Loss
     pnl_percent: Optional[float]
     duration: Optional[timedelta]
     max_drawdown: Optional[float]
-    
+
     # State
     status: Literal['open', 'closed', 'cancelled']
 ```
@@ -125,21 +125,21 @@ class Portfolio:
     """Portfolio state at a point in time"""
     timestamp: datetime
     strategy_id: str
-    
+
     # Capital
     initial_capital: Decimal
     cash: Decimal
     positions_value: Decimal
     total_value: Decimal
-    
+
     # Positions
     open_positions: List[str]  # Trade IDs
     position_count: int
-    
+
     # Performance
     returns: float              # Cumulative returns
     drawdown: float            # Current drawdown
-    
+
     # Risk metrics
     exposure: float            # % of capital in positions
     leverage: float            # Always 1.0 for spot
@@ -154,7 +154,7 @@ class BacktestResult:
     """Complete backtest results"""
     id: str
     strategy_id: str
-    
+
     # Configuration
     symbol: str
     timeframe: str
@@ -162,7 +162,7 @@ class BacktestResult:
     end_date: datetime
     initial_capital: Decimal
     commission_preset: str      # "binance", "coinbase", etc.
-    
+
     # Summary metrics
     total_return: float
     annual_return: float
@@ -171,7 +171,7 @@ class BacktestResult:
     max_drawdown: float
     win_rate: float
     profit_factor: float
-    
+
     # Trade statistics
     total_trades: int
     winning_trades: int
@@ -180,12 +180,12 @@ class BacktestResult:
     best_trade: Trade
     worst_trade: Trade
     avg_trade_duration: timedelta
-    
+
     # Time series
     equity_curve: List[float]
     drawdown_series: List[float]
     trades: List[Trade]
-    
+
     # Metadata
     created_at: datetime
     execution_time: float       # Backtest runtime in seconds
@@ -203,12 +203,12 @@ class ExchangePreset:
     maker_fee: Decimal          # 0.001 = 0.1%
     taker_fee: Decimal
     slippage: Decimal          # Estimated slippage
-    
+
     # Constraints
     min_order_size: dict       # Per symbol
     tick_size: dict           # Price precision
     lot_size: dict           # Quantity precision
-    
+
     # Rate limits
     requests_per_minute: int
     orders_per_day: int
