@@ -20,7 +20,7 @@ try:
         CCXTClient,
         CCXTError,
         DataDownloader,
-        download_command,  # CLI module function
+        download_command,
     )
     from src.data.storage import DataValidator, ParquetStorage
 except ImportError as e:
