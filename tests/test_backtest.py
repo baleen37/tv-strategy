@@ -16,17 +16,52 @@ import pytest
 
 # These imports WILL FAIL initially - this is expected in TDD
 try:
-    from src.backtest.engine import (
-        BacktestEngine,
-        Portfolio,
-        RSIStrategy,
-        Trade,
-    )
+    from src.backtest.engine import BacktestEngine, Portfolio, RSIStrategy, Trade
     from src.backtest.metrics import PerformanceMetrics, TradeAnalyzer
     from src.backtest.models import BacktestResult
 except ImportError as e:
     # Expected in TDD - tests written before implementation
     pytest.skip(f"Implementation not yet available: {e}", allow_module_level=True)
+
+
+@pytest.fixture
+def sample_trades():
+    """Sample completed trades for metrics testing"""
+    return [
+        Trade(
+            id="trade1",
+            symbol="BTC/USDT",
+            side="long",
+            entry_price=Decimal("47000.0"),
+            exit_price=Decimal("48000.0"),
+            quantity=Decimal("0.1"),
+            pnl=Decimal("100.0"),
+            pnl_percent=2.13,
+            status="closed",
+        ),
+        Trade(
+            id="trade2",
+            symbol="BTC/USDT",
+            side="long",
+            entry_price=Decimal("48000.0"),
+            exit_price=Decimal("47500.0"),
+            quantity=Decimal("0.1"),
+            pnl=Decimal("-50.0"),
+            pnl_percent=-1.04,
+            status="closed",
+        ),
+        Trade(
+            id="trade3",
+            symbol="BTC/USDT",
+            side="long",
+            entry_price=Decimal("47500.0"),
+            exit_price=Decimal("49000.0"),
+            quantity=Decimal("0.1"),
+            pnl=Decimal("150.0"),
+            pnl_percent=3.16,
+            status="closed",
+        ),
+    ]
 
 
 class TestPortfolio:
@@ -399,45 +434,6 @@ class TestBacktestEngine:
 
 class TestPerformanceMetrics:
     """Test performance calculation functionality"""
-
-    @pytest.fixture
-    def sample_trades(self) -> None:
-        """Sample completed trades for metrics testing"""
-        return [
-            Trade(
-                id="trade1",
-                symbol="BTC/USDT",
-                side="long",
-                entry_price=Decimal("47000.0"),
-                exit_price=Decimal("48000.0"),
-                quantity=Decimal("0.1"),
-                pnl=Decimal("100.0"),
-                pnl_percent=2.13,
-                status="closed",
-            ),
-            Trade(
-                id="trade2",
-                symbol="BTC/USDT",
-                side="long",
-                entry_price=Decimal("48000.0"),
-                exit_price=Decimal("47500.0"),
-                quantity=Decimal("0.1"),
-                pnl=Decimal("-50.0"),
-                pnl_percent=-1.04,
-                status="closed",
-            ),
-            Trade(
-                id="trade3",
-                symbol="BTC/USDT",
-                side="long",
-                entry_price=Decimal("47500.0"),
-                exit_price=Decimal("49000.0"),
-                quantity=Decimal("0.1"),
-                pnl=Decimal("150.0"),
-                pnl_percent=3.16,
-                status="closed",
-            ),
-        ]
 
     @pytest.fixture
     def sample_equity_curve(self) -> None:

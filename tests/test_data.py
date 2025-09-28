@@ -11,17 +11,13 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import numpy as np
 import pandas as pd
 import pytest
 
 # These imports WILL FAIL initially - this is expected in TDD
 try:
-    from src.data.ccxt_client import (
-        CCXTClient,
-        CCXTError,
-        DataDownloader,
-        download_command,
-    )
+    from src.data.ccxt_client import CCXTClient, CCXTError, DataDownloader, download_command
     from src.data.storage import DataValidator, ParquetStorage
 except ImportError as e:
     # Expected in TDD - tests written before implementation
@@ -202,7 +198,7 @@ class TestDataValidator:
         )
 
         # Missing data detection not implemented yet, so just validate the data structure
-        assert validator.validate_ohlcv_data(data_with_gap) is True
+        assert validator.validate_ohlcv_data(data_with_gap)
 
 
 class TestParquetStorage:
@@ -259,15 +255,26 @@ class TestParquetStorage:
 
         assert file_path == expected
 
-    def test_data_compression(self, sample_data, tmp_path) -> None:
+    def test_data_compression(self, tmp_path) -> None:
         """Test Parquet compression is enabled"""
-        # This WILL FAIL - compression settings don't exist
+        # Create larger dataset for meaningful compression test
+        large_data = pd.DataFrame(
+            {
+                "timestamp": pd.date_range("2024-01-01", periods=1000, freq="h"),
+                "open": np.random.uniform(47000, 49000, 1000),
+                "high": np.random.uniform(47500, 49500, 1000),
+                "low": np.random.uniform(46500, 48500, 1000),
+                "close": np.random.uniform(47000, 49000, 1000),
+                "volume": np.random.uniform(1.0, 5.0, 1000),
+            }
+        )
+
         storage = ParquetStorage(data_dir=tmp_path, compression="snappy")
 
-        file_path = storage.save(sample_data, "BTCUSDT", "1d", 100)
+        file_path = storage.save(large_data, "BTCUSDT", "1d", 1000)
 
         # File should be smaller than uncompressed
-        uncompressed_size = len(sample_data.to_csv())
+        uncompressed_size = len(large_data.to_csv())
         compressed_size = file_path.stat().st_size
 
         assert compressed_size < uncompressed_size
@@ -324,7 +331,7 @@ class TestCLIInterface:
         result = download_command(["BTCUSDT", "1d", "100"])
 
         assert result == 0  # Success exit code
-        mock_downloader.download.assert_called_once_with("BTCUSDT", "1d", 100)
+        mock_downloader.download.assert_called_once_with("BTC/USDT", "1d", 100)
 
     @patch("src.data.ccxt_client.DataDownloader")
     def test_download_command_ethusdt(self, mock_downloader_class) -> None:
@@ -337,7 +344,7 @@ class TestCLIInterface:
         result = download_command(["ETHUSDT", "1d", "50"])
 
         assert result == 0
-        mock_downloader.download.assert_called_once_with("ETHUSDT", "1d", 50)
+        mock_downloader.download.assert_called_once_with("ETH/USDT", "1d", 50)
 
     def test_download_command_invalid_args(self) -> None:
         """Test CLI error handling for invalid arguments"""
