@@ -29,7 +29,7 @@ class BacktestResult:
     sharpe_ratio: float | None = None
     profit_factor: float | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Calculate derived metrics after initialization."""
         if self.final_capital and self.initial_capital:
             self.total_return = float(
@@ -64,7 +64,7 @@ class OHLCVData:
     close: Decimal
     volume: Decimal
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate OHLCV relationships."""
         if not (self.low <= self.open <= self.high and self.low <= self.close <= self.high):
             raise ValueError("Invalid OHLCV relationships")
@@ -81,7 +81,7 @@ class TradeData:
     quantity: Decimal
     pnl: Decimal | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Calculate PnL if exit data is available."""
         if self.exit_price and self.exit_time:
             self.pnl = (self.exit_price - self.entry_price) * self.quantity

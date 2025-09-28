@@ -150,7 +150,7 @@ class PerformanceMetrics:
 class RiskMetrics:
     """Calculate risk-related metrics."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize risk metrics calculator."""
         pass
 
@@ -204,7 +204,7 @@ class RiskMetrics:
 class TradeAnalyzer:
     """Analyze individual trades and patterns."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize trade analyzer."""
         pass
 

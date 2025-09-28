@@ -1,32 +1,31 @@
-.PHONY: help setup test format lint clean install-hooks ci-local build-darwin build-nixos switch-darwin switch-nixos
+.PHONY: help setup test validate-all format lint clean install-hooks ci-local
 
 # 기본 타겟
 help:
-	@echo "🏠 Nix Dotfiles Management System"
+	@echo "📈 Cryptocurrency Backtesting System"
 	@echo ""
 	@echo "Development Commands:"
 	@echo "  make setup           - 개발 환경 설정"
-	@echo "  make format          - 코드 포맷팅 (Nix)"
-	@echo "  make lint            - 코드 린팅 및 검증"
 	@echo "  make test            - 모든 테스트 실행"
-	@echo "  make clean           - 캐시 및 빌드 파일 정리"
+	@echo "  make validate-all    - 모든 Pine Script 검증"
+	@echo "  make format          - 코드 포맷팅 (Python)"
+	@echo "  make lint            - 코드 린팅"
+	@echo "  make clean           - 캐시 및 임시 파일 삭제"
 	@echo "  make install-hooks   - Pre-commit hooks 설치"
-	@echo "  make ci-local        - 로컬 CI 파이프라인 실행"
+	@echo "  make ci-local        - 로컬에서 CI 파이프라인 실행"
 	@echo ""
-	@echo "System Configuration:"
-	@echo "  make build-darwin    - Darwin 시스템 빌드"
-	@echo "  make build-nixos     - NixOS 시스템 빌드"
-	@echo "  make switch-darwin   - Darwin 시스템 적용"
-	@echo "  make switch-nixos    - NixOS 시스템 적용"
-	@echo "  make home-switch     - Home Manager 적용"
+	@echo "Backtesting Commands:"
+	@echo "  make backtest        - 기본 백테스트 실행"
+	@echo "  make download-data   - 시장 데이터 다운로드"
+	@echo "  make backtest-custom - 커스텀 파라미터 백테스트"
 	@echo ""
-	@echo "Utility Commands:"
-	@echo "  make flake-update    - Flake inputs 업데이트"
-	@echo "  make gc              - Nix 가비지 컬렉션"
-	@echo "  make check-health    - 시스템 상태 확인"
+	@echo "Strategy Commands:"
+	@echo "  make test-rsi        - RSI 전략 테스트"
+	@echo "  make validate-pine   - Pine Script 검증"
 
 # 개발 환경 설정
-setup: requirements.txt
+setup:
+	@echo "🚀 Setting up development environment..."
 	python3 -m venv venv
 	. venv/bin/activate && pip install --upgrade pip
 	. venv/bin/activate && pip install -r requirements.txt
@@ -45,36 +44,56 @@ install-hooks:
 # 모든 Pine Script 검증
 validate-all:
 	@echo "🔍 Validating all Pine Scripts..."
-	@for file in $$(find strategies -name "*.pine"); do \
-		echo "\n📊 Validating $$file"; \
-		python tests/validator.py "$$file" || exit 1; \
-	done
+	@if [ -d "src/strategies" ]; then \
+		for file in $$(find src/strategies -name "*.pine" 2>/dev/null); do \
+			echo "\n📊 Validating $$file"; \
+			python -m src.strategies.validator "$$file" || exit 1; \
+		done; \
+	else \
+		echo "⚠️ No strategies directory found"; \
+	fi
 	@echo "\n✅ All validations passed!"
 
 # RSI 전략 테스트
 test-rsi:
 	@echo "🧪 Testing RSI strategies..."
-	@for file in $$(find strategies/momentum -name "*rsi*.pine"); do \
-		echo "\n📊 Testing $$file"; \
-		python tests/test_rsi_strategy.py "$$file" || exit 1; \
-	done
+	@if [ -d "strategies/momentum" ]; then \
+		for file in $$(find strategies/momentum -name "*rsi*.pine" 2>/dev/null); do \
+			echo "\n📊 Testing $$file"; \
+			python tests/test_rsi_strategy.py "$$file" || exit 1; \
+		done; \
+	else \
+		echo "ℹ️ No RSI strategies found in strategies/momentum (directory may not exist)"; \
+	fi
 
 # 모든 테스트 실행
-test: validate-all test-rsi
-	@echo "\n✅ All tests passed!"
+test:
+	@echo "🧪 Running all tests..."
+	python -m pytest tests/ -v --cov=src --cov-report=html --cov-report=term
+	@echo "✅ All tests passed!"
+
+# Pine Script 단일 검증
+validate-pine:
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ Usage: make validate-pine FILE=path/to/file.pine"; \
+		exit 1; \
+	fi
+	@echo "🔍 Validating $(FILE)..."
+	@python -m src.strategies.validator "$(FILE)"
+	@echo "✅ Validation complete!"
 
 # Python 코드 포맷팅
 format:
 	@echo "🎨 Formatting Python code..."
-	black tests/
-	isort tests/ --profile black
+	black src/ tests/
+	isort src/ tests/ --profile black
 	@echo "✅ Formatting complete"
 
 # 코드 린팅
 lint:
 	@echo "🔍 Running linters..."
-	ruff check tests/ --fix
-	mypy tests/ --ignore-missing-imports || true
+	ruff check src/ tests/ --fix
+	mypy src/ tests/ --ignore-missing-imports || true
 	@echo "✅ Linting complete"
 
 # 프로젝트 구조 확인
@@ -125,20 +144,21 @@ check-deps:
 
 # 백테스트 실행 (기본)
 backtest:
-	@echo "📈 Running RSI strategy backtest..."
-	@python backtesting/run_backtest.py --strategy rsi --symbol AAPL --period 1y
-	@echo "✅ Backtest complete! Check reports/backtest_results.html"
+	@echo "📈 Running cryptocurrency backtest..."
+	@python -m src.main backtest --symbol BTCUSDT
+	@echo "✅ Backtest complete!"
 
 # 백테스트 실행 (커스텀 파라미터)
 backtest-custom:
 	@echo "📊 Running custom backtest..."
-	@python backtesting/run_backtest.py \
-		--strategy rsi \
+	@if [ -z "$(SYMBOL)" ]; then \
+		echo "❌ Usage: make backtest-custom SYMBOL=BTCUSDT [INITIAL_CAPITAL=10000]"; \
+		exit 1; \
+	fi
+	@python -m src.main backtest \
 		--symbol $(SYMBOL) \
-		--period $(PERIOD) \
-		--rsi-period $(RSI_PERIOD) \
-		--oversold $(OVERSOLD) \
-		--overbought $(OVERBOUGHT)
+		--initial-capital $(or $(INITIAL_CAPITAL),10000) \
+		--commission-rate $(or $(COMMISSION_RATE),0.001)
 
 # 파라미터 최적화 실행
 optimize:
@@ -161,13 +181,30 @@ view-report:
 # 백테스트 데이터 다운로드
 download-data:
 	@echo "📥 Downloading historical data..."
-	@python backtesting/data/download.py --symbols "AAPL,GOOGL,MSFT,TSLA,SPY" --period 5y
+	@python -m src.main download \
+		--symbol $(or $(SYMBOL),BTCUSDT) \
+		--timeframe $(or $(TIMEFRAME),1d) \
+		--limit $(or $(LIMIT),100)
 	@echo "✅ Data download complete!"
 
-# 백테스트 캐시 정리
-clean-backtest:
-	@echo "🧹 Cleaning backtest cache..."
-	@rm -rf backtesting/data/cache/*
-	@rm -rf reports/*.html
-	@rm -rf reports/*.json
-	@echo "✅ Backtest cache cleaned!"
+# 백테스트 데이터 정리
+clean-data:
+	@echo "🧹 Cleaning market data..."
+	@rm -rf data/*.parquet
+	@echo "✅ Market data cleaned!"
+
+# 사용 예시 출력
+examples:
+	@echo "📋 Usage Examples:"
+	@echo ""
+	@echo "# 기본 백테스트"
+	@echo "make backtest"
+	@echo ""
+	@echo "# 커스텀 백테스트"
+	@echo "make backtest-custom SYMBOL=ETHUSDT INITIAL_CAPITAL=50000"
+	@echo ""
+	@echo "# 데이터 다운로드"
+	@echo "make download-data SYMBOL=BTCUSDT TIMEFRAME=1h LIMIT=500"
+	@echo ""
+	@echo "# Pine Script 검증"
+	@echo "make validate-pine FILE=src/strategies/rsi_basic.pine"
