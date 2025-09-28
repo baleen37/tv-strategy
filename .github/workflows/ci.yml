@@ -43,6 +43,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       coverage: ${{ steps.coverage-check.outputs.coverage }}
     steps:
